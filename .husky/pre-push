@@ -10,13 +10,15 @@ if echo "$branch" | grep -Eq '^(main|master)$'; then
 fi
 
 # Enforce format: INITIALS/ISSUEID-description OR INITIALS/OOS-description
-if ! echo "$branch" | grep -Eq '^[A-Z]{2,5}/([0-9]+|OOS)-[a-z0-9-]+$'; then
+# Allow both uppercase and lowercase in description
+if ! echo "$branch" | grep -Eq '^[A-Z]{2,5}/([0-9]+|OOS)-[a-zA-Z0-9-]+$'; then
   echo "❌ Invalid branch name: '$branch'"
   echo "🔒 Use format: INITIALS/ISSUEID-description OR INITIALS/OOS-description"
   echo ""
   echo "📋 Examples:"
   echo "   JB/12-add-api"
   echo "   TK/OOS-deploying-app"
+  echo "   FE/123-CICD-pipeline"
   echo ""
   echo "💡 To rename your branch locally, run:"
   echo "   git branch -m NEW_BRANCH_NAME"
