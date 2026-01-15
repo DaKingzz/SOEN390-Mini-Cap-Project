@@ -1,0 +1,35 @@
+# Get the current branch name
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+
+# Exit if we can't get branch name
+if [ -z "$branch" ]; then
+  exit 0
+fi
+
+# Path to commit message file
+msg_file=$1
+
+# Read the current commit message
+commit_msg=$(cat "$msg_file")
+
+# Extract issue ID or OOS using parameter expansion (no sed needed!)
+# Remove everything before the first /
+temp="${branch#*/}"
+
+# Check if it starts with OOS
+if echo "$temp" | grep -q "^OOS-"; then
+  issue_id="OOS"
+# Check if it starts with a number
+elif echo "$temp" | grep -q "^[0-9]"; then
+  # Extract just the number part before the dash
+  issue_id=$(echo "$temp" | cut -d'-' -f1)
+else
+  exit 0
+fi
+
+# If not already prefixed, insert it
+if ! echo "$commit_msg" | grep -q "^(#$issue_id)"; then
+  if ! echo "$commit_msg" | grep -q "^(OOS)"; then
+    echo "(#$issue_id) $commit_msg" > "$msg_file"
+  fi
+fi
