@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, Button } from "react-native";
 import Constants from "expo-constants";
+import GoogleMap from './GoogleMap';
 
 export default function App() {
   const apiBaseUrl = (Constants.expoConfig?.extra as any)?.API_BASE_URL;
@@ -18,16 +19,22 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Backend Connectivity Test</Text>
-      <Text style={styles.small}>API_BASE_URL: {apiBaseUrl ?? "(undefined)"}</Text>
+     <View style={{ flex: 1 }}>
 
-      <View style={{ height: 16 }} />
-      <Button title="Call /api/health" onPress={testBackend} />
+        <GoogleMap style={{ flex: 1 }} />
 
-      <View style={{ height: 16 }} />
-      <Text style={styles.result}>Result: {result}</Text>
-    </View>
+       <View style={styles.container}>
+         <Text style={styles.title}>Backend Connectivity Test</Text>
+         <Text style={styles.small}>API_BASE_URL: {apiBaseUrl ?? "(undefined)"}</Text>
+
+         <View style={{ height: 16 }} />
+         <Button title="Call /api/health" onPress={testBackend} />
+
+         <View style={{ height: 16 }} />
+         <Text style={styles.result}>Result: {result}</Text>
+       </View>
+     </View>
+
   );
 }
 

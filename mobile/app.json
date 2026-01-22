@@ -17,6 +17,11 @@
       "bundleIdentifier": "com.anonymous.mobile"
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAyaFpecFqdifQ87WMIImsWsSGNg5f6jPk"
+        }
+      },
       "package": "com.anonymous.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
