@@ -6,11 +6,13 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "expo": "~54.0.31",
+    "expo": "~54.0.32",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "^6.0.20",
     "expo-location": "^19.0.8",
@@ -20,6 +22,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "eslint": "^9.39.2",
+    "eslint-config-expo": "^10.0.0",
     "typescript": "~5.9.2"
   },
   "private": true
