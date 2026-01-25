@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "expo": "~54.0.31",
+    "expo": "~54.0.32",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.20",
     "expo-location": "^19.0.8",
