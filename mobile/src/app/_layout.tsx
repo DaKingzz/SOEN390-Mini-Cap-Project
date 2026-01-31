@@ -1,12 +1,7 @@
-import {Tabs} from "expo-router";
+import BottomNav from "../components/BottomNav";
 
 export default function RootLayout() {
     return (
-        // Move Bottom Nav Bar Here
-        <Tabs>
-            <Tabs.Screen name="Settings"/>
-            <Tabs.Screen name="Home"/>
-            <Tabs.Screen name="Shuttle Info"/>
-        </Tabs>
+        <BottomNav/>
     );
 }
