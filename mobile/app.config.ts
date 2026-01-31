@@ -10,6 +10,10 @@ export default ({ config }: any) => {
 
   return {
     ...config, // keeps the stuff from app.json thanks to npm install dotenv, this file won't override app.json but adds on it
+    plugins: [
+      ...(config.plugins ?? []),
+      "expo-router"
+    ],
     extra: {
       ...(config.extra ?? {}),
       API_BASE_URL: apiBaseUrl,
