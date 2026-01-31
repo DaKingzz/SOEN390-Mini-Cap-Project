@@ -90,5 +90,8 @@ jobs:
           echo "TARGET=emulator" > .env
           echo "API_BASE_URL_EMULATOR=http://localhost:8080" >> .env
 
+      - name: Align Expo Dependencies
+        run: npx expo install --check || npx expo install
+
       - name: Expo doctor
         run: npx expo-doctor
