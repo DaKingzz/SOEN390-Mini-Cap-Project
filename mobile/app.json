@@ -7,6 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "unimap",
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -22,7 +26,7 @@
           "apiKey": "AIzaSyAyaFpecFqdifQ87WMIImsWsSGNg5f6jPk"
         }
       },
-      "package": "com.anonymous.mobile",
+      "package": "com.soen390.conunav",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

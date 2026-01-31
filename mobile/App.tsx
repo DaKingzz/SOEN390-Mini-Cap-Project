@@ -1,11 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, Button } from "react-native";
 import Constants from "expo-constants";
 import GoogleMap from './GoogleMap';
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
 
 export default function App() {
   const apiBaseUrl = (Constants.expoConfig?.extra as any)?.API_BASE_URL;
   const [result, setResult] = useState("Not tested yet");
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+  }, []);
+
 
   const testBackend = async () => {
     try {
@@ -17,6 +26,41 @@ export default function App() {
       setResult(e?.message ?? String(e));
     }
   };
+
+  const importGoogleCalendar = async () => {
+    try {
+
+      await GoogleSignin.signIn();
+
+      const { accessToken } = await GoogleSignin.getTokens();
+      if (!accessToken) throw new Error("No access token returned.");
+
+      // MVP: call Google Calendar directly from the app
+      const calendarRes = await fetch(
+        "https://www.googleapis.com/calendar/v3/users/me/calendarList",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+
+      if (!calendarRes.ok) {
+        const text = await calendarRes.text();
+        throw new Error(`Calendar API error: ${text}`);
+      }
+
+      const data = await calendarRes.json();
+
+      // show something small to prove it worked
+      const count = Array.isArray(data.items) ? data.items.length : 0;
+      setResult(`Connected Calendars found: ${count}`);
+    } catch (e: any) {
+      console.log("GOOGLE SIGN-IN ERROR (raw):", e);
+      console.log("GOOGLE SIGN-IN ERROR (string):", JSON.stringify(e));
+      setResult(e?.message ?? JSON.stringify(e));
+    }
+
+  };
+
 
   return (
      <View style={{ flex: 1 }}>
@@ -32,6 +76,13 @@ export default function App() {
 
          <View style={{ height: 16 }} />
          <Text style={styles.result}>Result: {result}</Text>
+
+         <View style={{ height: 16 }} />
+          <Button
+            title="Import Schedule from Google Calendar"
+            onPress={importGoogleCalendar}
+          />
+
        </View>
      </View>
 
