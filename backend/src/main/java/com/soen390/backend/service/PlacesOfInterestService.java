@@ -38,15 +38,17 @@ public class PlacesOfInterestService {
                         )
                 )
         );
-        String rawJson = restClient.post()
-                .uri("https://places.googleapis.com/v1/places:searchNearby")
-                .header("X-Goog-Api-Key", apiKey)
-                .header("X-Goog-FieldMask", "places.displayName,places.formattedAddress,places.location,places.accessibilityOptions,places.restroom,places.parkingOptions,places.rating")
-                .body(body)
-                .retrieve()
-                .body(String.class);
+        String rawJson;
+        try {
+            rawJson = restClient.post()
+                    .uri("https://places.googleapis.com/v1/places:searchNearby")
+                    .header("X-Goog-Api-Key", apiKey)
+                    .header("X-Goog-FieldMask", "places.displayName,places.formattedAddress,places.location,places.accessibilityOptions,places.restroom,places.parkingOptions,places.rating")
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
 
-        if (rawJson == null || rawJson.isBlank()) {
+        } catch (Exception e) {
             throw new RuntimeException("Google Places API returned an empty response");
         }
 
