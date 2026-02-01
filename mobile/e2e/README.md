@@ -111,7 +111,21 @@ appId: com.example.app
 
 ## 5. Running Test
 
-To all flows inside the e2e folder from the /mobile directory:
+### Run the backend and mobile servers
+
+Before running a flow make sure to have the backend server running to have the expo server running:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+
+cd mobile
+npx expo start --dev-client
+```
+
+### Have you Emulator running
+
+To run all flows inside the e2e folder from the /mobile directory:
 
 ```bash
 maestro test e2e/
@@ -150,3 +164,6 @@ Running on Medium_Phone_API_36.1
  ║    +   Assert that "Result: OK" is visible
  ║
 ```
+
+If the example flow.yml did not complete succesfully it might because on the first time the app opens, there are some developper pop-up that the flow script is not designed to handle.
+Just click continue on the app and rerun the flow.
