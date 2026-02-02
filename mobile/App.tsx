@@ -13,8 +13,16 @@ export default function App() {
   useEffect(() => {
     GoogleSignin.configure({
       scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+
+      // Web OAuth client ID (from the web client you just created)
+      webClientId: "511345858617-6dd93pjirlhn1k82scnvs9ovcpopd81u.apps.googleusercontent.com",
+
+      // Required to get serverAuthCode
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
     });
   }, []);
+
 
   const testBackend = async () => {
     try {
@@ -29,65 +37,35 @@ export default function App() {
 
   const importGoogleCalendar = async () => {
     try {
+      if (!apiBaseUrl) throw new Error("API_BASE_URL is missing");
 
-      await GoogleSignin.signIn();
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-      const { accessToken } = await GoogleSignin.getTokens();
-      if (!accessToken) throw new Error("No access token returned.");
+      const userInfo = await GoogleSignin.signIn();
+      const code = (userInfo as any)?.data?.serverAuthCode as string | undefined;
 
-      // Next 7 days window
-      const timeMin = new Date().toISOString();
-      const timeMax = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      if (!code) throw new Error("No serverAuthCode returned.");
 
-      // If you want a specific calendar (not primary), replace "primary" with that calendarId
-      const listRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const listData = await listRes.json();
-      const calendars = Array.isArray(listData.items) ? listData.items : [];
-
-      const target = calendars.find((c: any) => c.summary === "Abdulah");
-      if (!target?.id) throw new Error("Calendar 'Abdulah' not found.");
-      console.log("calendar id:", target.id);
-
-      const calendarId = target.id;
-
-      // 2) Fetch events from that calendar   
-      const eventsRes = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events` +
-          `?timeMin=${encodeURIComponent(timeMin)}` +
-          `&timeMax=${encodeURIComponent(timeMax)}` +
-          `&singleEvents=true` +
-          `&orderBy=startTime` +
-          `&maxResults=250` +
-          `&timeZone=${encodeURIComponent("America/Montreal")}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-
-
-      if (!eventsRes.ok) {
-        const text = await eventsRes.text();
-        throw new Error(`Events API error: ${text}`);
-      }
-
-      const eventsData = await eventsRes.json();
-      const events = Array.isArray(eventsData.items) ? eventsData.items : [];
-
-      const TZ = "America/Montreal";
-
-      const weekdayFmt = new Intl.DateTimeFormat("en-CA", {
-        timeZone: TZ,
-        weekday: "long",
+      const res = await fetch(`${apiBaseUrl}/api/calendar/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serverAuthCode: code,
+          calendarName: "primary", // change to the name of the calendar you want to import
+          days: 7,
+        }),
       });
 
-      const dateFmt = new Intl.DateTimeFormat("en-CA", {
-        timeZone: TZ,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
+      if (!res.ok) throw new Error(await res.text());
 
-      const startDateTimeFmt = new Intl.DateTimeFormat("en-CA", {
+      const data = await res.json();
+
+      // Google returns items at: data.events.items
+      const events = Array.isArray(data?.events?.items) ? data.events.items : [];
+
+      const TZ = "America/Toronto";
+
+      const startFmt = new Intl.DateTimeFormat("en-CA", {
         timeZone: TZ,
         weekday: "long",
         year: "numeric",
@@ -104,24 +82,24 @@ export default function App() {
       });
 
       const fmt = (ev: any) => {
-        // All-day
+        // all-day
         if (ev.start?.date && ev.end?.date) {
           const d = new Date(ev.start.date);
-          const day = weekdayFmt.format(d);
-          const date = dateFmt.format(d);
-          return `${day} ${date} (all-day)`;
+          return `${new Intl.DateTimeFormat("en-CA", {
+            timeZone: TZ,
+            weekday: "long",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(d)} (all-day)`;
         }
 
-        // Timed
         const start = ev.start?.dateTime;
         const end = ev.end?.dateTime;
         if (!start || !end) return "(missing time)";
 
-        const startStr = startDateTimeFmt.format(new Date(start)); // includes weekday + date + start time
-        const endStr = timeFmt.format(new Date(end));              // just end time
-        return `${startStr} – ${endStr}`;
+        return `${startFmt.format(new Date(start))} – ${timeFmt.format(new Date(end))}`;
       };
-
 
       const preview = events.slice(0, 20).map((ev: any) => {
         const course = ev.summary ?? "(no title)";
@@ -131,13 +109,13 @@ export default function App() {
       });
 
       setCalendarEvents(`Next 7 days: ${events.length} events\n\n` + preview.join("\n\n"));
-
+      setResult("Imported via backend.");
     } catch (e: any) {
-      console.log("GOOGLE SIGN-IN ERROR (raw):", e);
-      console.log("GOOGLE SIGN-IN ERROR (string):", JSON.stringify(e));
-      setResult(e?.message ?? JSON.stringify(e));
+      console.log("IMPORT (BACKEND) ERROR:", e);
+      setResult(e?.message ?? String(e));
     }
   };
+
 
 
   return (
@@ -152,6 +130,7 @@ export default function App() {
 
          <View style={{ height: 16 }} />
          <Text style={styles.result}>Result: {result}</Text>
+
 
          <View style={{ height: 16 }} />
           <Button
