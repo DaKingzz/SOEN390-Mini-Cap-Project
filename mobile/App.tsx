@@ -8,13 +8,20 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 export default function App() {
   const apiBaseUrl = (Constants.expoConfig?.extra as any)?.API_BASE_URL;
   const [result, setResult] = useState("Not tested yet");
+  const [calendarEvents, setCalendarEvents] = useState("No events imported yet");
 
   useEffect(() => {
     GoogleSignin.configure({
       scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+
+      // MUST be the *Web* client ID
+      webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+
+      // Needed to get serverAuthCode + refresh token capability
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
     });
   }, []);
-
 
   const testBackend = async () => {
     try {
@@ -35,37 +42,113 @@ export default function App() {
       const { accessToken } = await GoogleSignin.getTokens();
       if (!accessToken) throw new Error("No access token returned.");
 
-      // MVP: call Google Calendar directly from the app
-      const calendarRes = await fetch(
-        "https://www.googleapis.com/calendar/v3/users/me/calendarList",
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
+      // Next 7 days window
+      const timeMin = new Date().toISOString();
+      const timeMax = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // If you want a specific calendar (not primary), replace "primary" with that calendarId
+      const listRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const listData = await listRes.json();
+      const calendars = Array.isArray(listData.items) ? listData.items : [];
+
+      const target = calendars.find((c: any) => c.summary === "Abdulah");
+      if (!target?.id) throw new Error("Calendar 'Abdulah' not found.");
+      console.log("calendar id:", target.id);
+
+      const calendarId = target.id;
+
+      // 2) Fetch events from that calendar   
+      const eventsRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events` +
+          `?timeMin=${encodeURIComponent(timeMin)}` +
+          `&timeMax=${encodeURIComponent(timeMax)}` +
+          `&singleEvents=true` +
+          `&orderBy=startTime` +
+          `&maxResults=250` +
+          `&timeZone=${encodeURIComponent("America/Montreal")}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
-      if (!calendarRes.ok) {
-        const text = await calendarRes.text();
-        throw new Error(`Calendar API error: ${text}`);
+
+      if (!eventsRes.ok) {
+        const text = await eventsRes.text();
+        throw new Error(`Events API error: ${text}`);
       }
 
-      const data = await calendarRes.json();
+      const eventsData = await eventsRes.json();
+      const events = Array.isArray(eventsData.items) ? eventsData.items : [];
 
-      // show something small to prove it worked
-      const count = Array.isArray(data.items) ? data.items.length : 0;
-      setResult(`Connected Calendars found: ${count}`);
+      const TZ = "America/Montreal";
+
+      const weekdayFmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: TZ,
+        weekday: "long",
+      });
+
+      const dateFmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: TZ,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+
+      const startDateTimeFmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: TZ,
+        weekday: "long",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const timeFmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: TZ,
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const fmt = (ev: any) => {
+        // All-day
+        if (ev.start?.date && ev.end?.date) {
+          const d = new Date(ev.start.date);
+          const day = weekdayFmt.format(d);
+          const date = dateFmt.format(d);
+          return `${day} ${date} (all-day)`;
+        }
+
+        // Timed
+        const start = ev.start?.dateTime;
+        const end = ev.end?.dateTime;
+        if (!start || !end) return "(missing time)";
+
+        const startStr = startDateTimeFmt.format(new Date(start)); // includes weekday + date + start time
+        const endStr = timeFmt.format(new Date(end));              // just end time
+        return `${startStr} – ${endStr}`;
+      };
+
+
+      const preview = events.slice(0, 20).map((ev: any) => {
+        const course = ev.summary ?? "(no title)";
+        const when = fmt(ev);
+        const loc = ev.location ? ` @ ${ev.location}` : "";
+        return `• ${course} - ${when}${loc}`;
+      });
+
+      setCalendarEvents(`Next 7 days: ${events.length} events\n\n` + preview.join("\n\n"));
+
     } catch (e: any) {
       console.log("GOOGLE SIGN-IN ERROR (raw):", e);
       console.log("GOOGLE SIGN-IN ERROR (string):", JSON.stringify(e));
       setResult(e?.message ?? JSON.stringify(e));
     }
-
   };
 
 
   return (
      <View style={{ flex: 1 }}>
-
-        <GoogleMap style={{ flex: 1 }} />
 
        <View style={styles.container}>
          <Text style={styles.title}>Backend Connectivity Test</Text>
@@ -82,6 +165,9 @@ export default function App() {
             title="Import Schedule from Google Calendar"
             onPress={importGoogleCalendar}
           />
+
+          <View style={{ height: 16 }} />
+          <Text style={styles.result}>Events: {calendarEvents}</Text>
 
        </View>
      </View>
