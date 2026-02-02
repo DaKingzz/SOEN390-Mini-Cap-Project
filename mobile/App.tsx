@@ -13,13 +13,6 @@ export default function App() {
   useEffect(() => {
     GoogleSignin.configure({
       scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
-
-      // MUST be the *Web* client ID
-      webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
-
-      // Needed to get serverAuthCode + refresh token capability
-      offlineAccess: true,
-      forceCodeForRefreshToken: true,
     });
   }, []);
 
