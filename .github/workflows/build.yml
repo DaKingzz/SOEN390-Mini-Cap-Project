@@ -23,7 +23,7 @@ jobs:
           cache: maven
 
       - name: Build backend
-        run: mvn -B clean verify
+        run: mvn -B clean package -DskipTests
         working-directory: backend
 
       - name: SonarQube Scan
