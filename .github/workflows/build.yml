@@ -8,21 +8,22 @@ on:
 
 jobs:
   sonarqube:
+    name: SonarQube
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '21'
+          cache: maven
 
       - name: Build backend
-        run: mvn clean verify
+        run: mvn -B clean verify
         working-directory: backend
 
       - name: SonarQube Scan
@@ -32,4 +33,3 @@ jobs:
         with:
           args: >
             -Dsonar.java.binaries=backend/target/classes
-
