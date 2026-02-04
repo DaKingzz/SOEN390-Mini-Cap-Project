@@ -1,6 +1,8 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const BURGUNDY = "#800020";
 
@@ -25,7 +27,8 @@ export default function BuildingPopup({
           <Text style={styles.title}>{name}</Text>
 
           <View style={styles.headerRight}>
-            <Text style={styles.logo}>P&</Text>
+            <Text style={styles.logo}>P</Text>
+            <FontAwesome name="wheelchair" size={24} color="black" />
 
             <Pressable onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={20} color="#111" />
@@ -47,7 +50,7 @@ export default function BuildingPopup({
         </Text>
 
         <Pressable onPress={onDirections} style={styles.directionsBtn}>
-          <Ionicons name="navigate" size={18} color="#fff" />
+          <FontAwesome5 name="directions" size={18} color="white" />
           <Text style={styles.directionsText}>Directions</Text>
         </Pressable>
       </View>
