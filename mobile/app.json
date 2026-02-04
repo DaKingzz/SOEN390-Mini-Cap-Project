@@ -18,12 +18,11 @@
       "bundleIdentifier": "com.anonymous.mobile"
     },
     "android": {
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyAyaFpecFqdifQ87WMIImsWsSGNg5f6jPk"
-        }
-      },
       "package": "com.anonymous.mobile",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
