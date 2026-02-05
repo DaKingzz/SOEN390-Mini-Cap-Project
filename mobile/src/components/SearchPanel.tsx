@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View,Text, TextInput, FlatList,TouchableOpacity,StyleSheet,Pressable,Modal, ScrollView} from "react-native";
+import { View,Text, TextInput, FlatList,TouchableOpacity,StyleSheet,Pressable,Modal, ScrollView, ActivityIndicator} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
+import { getNearbyPlaces } from "../api";
 
 const BURGUNDY = "#800020";
-
-const FILTERS = ["Restrooms", "Restaurants", "Classes", "Coffee", "Libraries"];
 
 const RECENTS = [
   {
@@ -24,25 +24,59 @@ const RECENTS = [
   },
 ];
 
-const NEARBY = [
-  {
-    id: "1",
-    name: "Hall Building Auditorium",
-    floor: "Floor 2",
-    distance: "3 min walk · 120m",
-  },
-  {
-    id: "2",
-    name: "Science Center North",
-    floor: "Floor 1",
-    distance: "5 min walk · 250m",
-  },
+const PLACE_TYPES = [
+  { label: "Restaurants", value: "restaurant" },
+  { label: "Parking", value: "parking" },
+  { label: "Libraries", value: "library" },
+  { label: "Parks", value: "park" },
+  { label: "Food Stores", value: "food_store" },
+  { label: "Banks", value: "bank" },
+  { label: "Gyms", value: "gym" },
+  { label: "Subway", value: "subway_station" },
+  
 ];
+
+
+
+async function getUserLocation() {
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== "granted") throw new Error("Location denied");
+
+  const location = await Location.getCurrentPositionAsync({});
+  return {
+    latitude: location.coords.latitude,
+    longitude: location.coords.longitude,
+  };
+}
+
 
 export default function SearchPanel({visible, onClose,}: {visible: boolean; onClose: () => void;}) {
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("Restrooms");
-   const inputRef = useRef<TextInput>(null);
+  const [activeFilter, setActiveFilter] = useState<string>("restaurant");
+  const inputRef = useRef<TextInput>(null);
+  const [nearby, setNearby] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const cacheRef = useRef<Record<string, any[]>>({});
+
+
+  async function fetchNearbyPlaces(placeType: string) {
+  if (cacheRef.current[placeType]) {
+    setNearby(cacheRef.current[placeType]);
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const { latitude, longitude } = await getUserLocation();
+    const results = await getNearbyPlaces(latitude, longitude, placeType);
+    setNearby(results);
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setLoading(false);
+  }
+}
+
 
    useEffect(() => {
     if (visible) {
@@ -52,6 +86,12 @@ export default function SearchPanel({visible, onClose,}: {visible: boolean; onCl
     }
   }, [visible]);
 
+    useEffect(() => {
+      setNearby([]); 
+      fetchNearbyPlaces(activeFilter);
+  }, [activeFilter]);
+
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
 
@@ -59,12 +99,12 @@ export default function SearchPanel({visible, onClose,}: {visible: boolean; onCl
       <Pressable style={styles.backdrop} onPress={onClose} />
       {/* panel */}
       <View style={styles.panel}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Search</Text>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeText}>Close</Text>
-            </Pressable>
-          </View>
+        <View style={styles.header}>
+          <Text style={styles.title}>Search</Text>
+          <Pressable onPress={onClose} style={styles.closeBtn}>
+            <Text style={styles.closeText}>Close</Text>
+          </Pressable>
+        </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -81,28 +121,33 @@ export default function SearchPanel({visible, onClose,}: {visible: boolean; onCl
 
         {/* Filters */}
         <View style={styles.filtersWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
-            {FILTERS.map((filter) => (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filters}
+          >
+            {PLACE_TYPES.map((item) => (
               <TouchableOpacity
-                key={filter}
-                onPress={() => setActiveFilter(filter)}
+                key={item.value}
+                onPress={() => setActiveFilter(item.value)}
                 style={[
                   styles.filterChip,
-                  activeFilter === filter && styles.activeChip,
+                  activeFilter === item.value && styles.activeChip,
                 ]}
               >
                 <Text
                   style={[
                     styles.filterText,
-                    activeFilter === filter && styles.activeText,
+                    activeFilter === item.value && styles.activeText,
                   ]}
                 >
-                  {filter}
+                  {item.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
+
 
         {/* Recents */}
         <Text style={styles.sectionTitle}>Recents</Text>
@@ -122,24 +167,44 @@ export default function SearchPanel({visible, onClose,}: {visible: boolean; onCl
 
         {/* Nearby Results */}
         <Text style={styles.sectionTitle}>Nearby {activeFilter}</Text>
-        <FlatList
-          data={NEARBY}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.poiItem}>
-              <View>
-                <Text style={styles.placeName}>{item.name}</Text>
-                <Text style={styles.address}>
-                  {item.floor} · {item.distance}
-                </Text>
-              </View>
+        <View style={{ flex: 1 }}>
+          <FlatList
+            data={nearby}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.poiItem}>
+                <View style={styles.poiTextContainer}>
+                  <Text
+                    style={styles.placeName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.name}
+                  </Text>
 
-              <TouchableOpacity style={styles.directionsButton}>
-                <Ionicons name="navigate" size={18} color="#fff" />
-              </TouchableOpacity>
+                  <Text
+                    style={styles.address}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {item.address}
+                  </Text>
+                </View>
+
+                <TouchableOpacity style={styles.directionsButton}>
+                  <Ionicons name="navigate" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={BURGUNDY} />
             </View>
           )}
-        />
+        </View>
+
       </View>
     </Modal>
   );
@@ -214,17 +279,30 @@ const styles = StyleSheet.create({
   },
   poiItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderColor: "#eee",
   },
+  poiTextContainer: {
+    flex: 1,              
+    marginRight: 12, 
+    paddingTop: 2,     
+  },
   directionsButton: {
-    backgroundColor: "#ef4444",
+    flexShrink: 0,       
+    backgroundColor: BURGUNDY,
     padding: 10,
     borderRadius: 20,
+    alignSelf: "center"
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
 
    backdrop: {
     flex: 1,
@@ -300,4 +378,5 @@ const styles = StyleSheet.create({
   spacer: {
     flex: 1,
   },
+  
 });
