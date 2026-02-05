@@ -1,15 +1,16 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text } from "react-native";
+import React, {useState} from "react";
+import {StyleSheet, View, Text} from "react-native";
 import BottomDrawer from "../BottomDrawer";
-import NavigationTransportCard, { TransportMode } from "./NavigationTransportCard";
+import NavigationTransportCard, {TransportMode} from "./NavigationTransportCard";
 import NavigationGoButton from "./NavigationGoButton";
+import NavigationPathRow from "./NavigationPathRow";
 
 interface NavigationConfigViewProps {
     visible: boolean;
     onClose: () => void;
 }
 
-export default function NavigationConfigView({ visible, onClose }: NavigationConfigViewProps) {
+export default function NavigationConfigView({visible, onClose}: NavigationConfigViewProps) {
     const [selectedMode, setSelectedMode] = useState<TransportMode>("WALK");
 
     const handleGo = () => {
@@ -53,23 +54,8 @@ export default function NavigationConfigView({ visible, onClose }: NavigationCon
                 />
             </View>
 
-            {/* Divider Line */}
-            <View style={styles.divider} />
-
             {/* 2. Stats & Action Row */}
-            <View style={styles.actionRow}>
-                <View style={styles.statsContainer}>
-                    <Text style={styles.arrivingLabel}>Arriving in</Text>
-                    <Text style={styles.arrivingTime}>5 mins</Text>
-                </View>
-
-                <View style={styles.statsContainer}>
-                    <Text style={styles.etaLabel}>ETA</Text>
-                    <Text style={styles.etaTime}>16:37</Text>
-                </View>
-
-                <NavigationGoButton onPress={handleGo} />
-            </View>
+            <NavigationPathRow handleGo={handleGo}/>
         </BottomDrawer>
     );
 }
@@ -79,47 +65,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 10,
         alignItems: "center",
+        backgroundColor: ""
     },
     transportRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        width: "100%",
-        marginBottom: 20,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: "#E0E0E0",
-        width: "100%",
-        marginBottom: 20,
-    },
-    actionRow: {
-        flexDirection: "row",
-        width: "100%",
-        justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: 10,
-    },
-    statsContainer: {
-        alignItems: "flex-start",
-    },
-    arrivingLabel: {
-        fontSize: 12,
-        color: "#666",
-        marginBottom: 2,
-    },
-    arrivingTime: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#000",
-    },
-    etaLabel: {
-        fontSize: 12,
-        color: "#666",
-        marginBottom: 2,
-    },
-    etaTime: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#000",
-    },
+        width: "95%",
+        paddingHorizontal: 5,
+        marginBottom: 20,
+        borderRadius: 5,
+        backgroundColor: "#D9D9D9",
+    }
 });

@@ -58,7 +58,7 @@ export default function BottomDrawer({
             enableDynamicSizing={enableDynamicSizing}
             enablePanDownToClose={enablePanDownToClose}
             onDismiss={onClose}
-            backgroundStyle={{backgroundColor}}
+            backgroundStyle={[styles.background, { backgroundColor }]}
             handleComponent={() => (
                 <CustomHandle onPress={() => bottomSheetRef.current?.dismiss()}/>
             )}
@@ -71,6 +71,16 @@ export default function BottomDrawer({
 }
 
 const styles = StyleSheet.create({
+    background: {
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: -5, // Small negative value to show above the sheet
+        },
+        shadowOpacity: 0.99,
+        shadowRadius: 10,
+        elevation: 10,
+    },
     contentContainer: {
         padding: 36,
         alignItems: 'center',

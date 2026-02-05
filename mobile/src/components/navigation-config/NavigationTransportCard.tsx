@@ -59,9 +59,9 @@ export default function NavigationTransportCard({ mode, duration, isSelected, on
 
 const styles = StyleSheet.create({
     card: {
-        width: 72,
-        height: 72,
-        borderRadius: 12,
+        width: "19.5%",
+        height: "82.5%",
+        borderRadius: 10,
         justifyContent: "center",
         alignItems: "center",
         marginHorizontal: 6,
