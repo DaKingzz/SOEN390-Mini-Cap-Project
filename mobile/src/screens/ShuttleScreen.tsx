@@ -1,4 +1,4 @@
-import React, {useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { StyleSheet, Text, View, Pressable, ScrollView} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -58,16 +58,8 @@ export default function ShuttleScreen({
 }, [campusKey, campusInfo.name]);
 
 
-  const monThuTimes = useMemo(() => {
-    const monThu = monThuData as ShuttleScheduleJson;
-    return monThu.departures[campusKey] ?? []
-  }, [campusKey]);
-
-
-  const fridayTimes = useMemo(() => {
-    const fri = fridayData as ShuttleScheduleJson;
-    return fri.departures[campusKey] ?? []
-  }, [campusKey]);
+  const monThuTimes = monThuData.departures[campusKey] ?? [];
+  const fridayTimes = fridayData.departures[campusKey] ?? [];
 
 
   return (
@@ -75,13 +67,11 @@ export default function ShuttleScreen({
     <View style = {styles.root}>
       <ScrollView 
       contentContainerStyle = {styles.content}
-      style={{ flex: 1 }}
-      key={showFullSchedule ? "full" : "next"}>
+      style={{ flex: 1 }}>
         {showFullSchedule && (
           <Pressable style={styles.backBtn} 
-            onPress={() => {
-              if (showFullSchedule) setShowFullSchedule(false)
-            }} hitSlop={10}>
+            onPress={() => setShowFullSchedule(false)}
+            hitSlop={10}>
             <Ionicons name="arrow-back" size={22} color={BURGUNDY} />
           </Pressable>
         )}
@@ -239,7 +229,7 @@ const styles = StyleSheet.create({
   width: 36,
   height: 36,
   borderRadius: 18,
-  backgroundColor: "#800020",
+  backgroundColor: BURGUNDY,
   alignItems: "center",
   justifyContent: "center",
   shadowColor: "#000",

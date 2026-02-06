@@ -17,7 +17,7 @@ function toMinutes24(time: string) {
 }
 
 function minutesTo24h(min: number) {
-  const h = Math.floor(min / 60) % 24;
+  const h = Math.floor(min / 60);
   const m = min % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
@@ -51,7 +51,7 @@ export function computeNextDepartures(
 
   return todayTimes
     .map((t) => ({ timeStr: t, depMin: toMinutes24(t) }))
-    .filter((x) => x.depMin >= now)
+    .filter((x) => x.depMin > now)
     .slice(0, NEXT_COUNT)
     .map((x, i) => ({
       id: `${campusKey}-${i}-${x.timeStr}`,
