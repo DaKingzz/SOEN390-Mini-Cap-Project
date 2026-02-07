@@ -234,8 +234,13 @@ export default function HomeUi() {
 
         {showBuildingPopup && selectedBuilding && (
           <BuildingPopup
+            id={selectedBuilding.id}
             name={selectedBuilding.name}
             addressLines={selectedBuilding.addressLines}
+            openingHours={selectedBuilding.openingHours.label}
+            hasStudySpots={selectedBuilding.hasStudySpots}
+            image={selectedBuilding.image}
+            accessibility={selectedBuilding.accessibility}
             onClose={() => setShowBuildingPopup(false)}
             onDirections={() => {}}
           />
