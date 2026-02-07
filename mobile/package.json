@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "expo-doctor": "^1.17.14",
     "typescript": "~5.9.2"
   },
   "private": true
