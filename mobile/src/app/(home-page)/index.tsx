@@ -10,11 +10,12 @@ import CampusSwitcher from "../../components/CampusSwitcher";
 import {Building, BuildingId, BUILDINGS} from "../../data/buildings";
 import BuildingMarker from "../../components/BuildingMarker";
 import BuildingPopup from "../../components/BuildingPopup";
-import BottomDrawer from "../../components/BottomDrawer"
 import useNavigationState from "../../hooks/useNavigationState";
 import {NAVIGATION_STATE} from "../../const";
 import NavigationConfigView from "../../components/navigation-config/NavigationConfigView";
-import { styles as navStyles } from "../../components/BottomNav";
+import {styles as navStyles} from "../../components/BottomNav";
+import useEndpoints from "../../hooks/usePath";
+import DirectionPath from "../../components/DirectionPath";
 
 const SGW_CENTER = {latitude: 45.4973, longitude: -73.5790};
 const LOYOLA_CENTER = {latitude: 45.4582, longitude: -73.6405};
@@ -36,7 +37,8 @@ interface HomePageIndexProps {
 export default function HomePageIndex(props: HomePageIndexProps) {
     const router = useRouter();
     const [campus, setCampus] = useState<"SGW" | "LOYOLA">("SGW");
-    const {setNavigationState, isNavigating, isIdle, isConfiguring, isSearching} = useNavigationState();
+    const {setNavigationState, isNavigating, isConfiguring, isSearching} = useNavigationState();
+    const {origin, setOrigin, destination, setDestination} = useEndpoints();
     const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
     const navigation = useNavigation();
     const [region, setRegion] = useState<Region>({
@@ -73,7 +75,7 @@ export default function HomePageIndex(props: HomePageIndexProps) {
 
         navigation.setOptions({
             tabBarStyle: shouldHideTabBar
-                ? { display: "none" } // Hide it completely
+                ? {display: "none"} // Hide it completely
                 : navStyles.tabBarStyle, // Explicitly restore your custom styles
         });
     }, [isConfiguring, isNavigating, navigation]);
@@ -170,14 +172,17 @@ export default function HomePageIndex(props: HomePageIndexProps) {
 
     const onPressBuilding = (b: Building) => {
         if (selectedBuildingId !== b.id || !outlineMode) {
+            setDestination({longitude: b.marker.longitude, latitude: b.marker.latitude})
             enterOutlineForBuilding(b);
             return;
         }
         setShowBuildingPopup(true);
     };
 
-    const onPressDirections = () => {
+    const onPressDirections = async () => {
         setShowBuildingPopup(false);
+        const currLocation = await getOneFix();
+        setOrigin({longitude: currLocation.longitude, latitude: currLocation.latitude});
         setNavigationState(NAVIGATION_STATE.ROUTE_CONFIGURING);
     }
 
@@ -227,6 +232,10 @@ export default function HomePageIndex(props: HomePageIndexProps) {
                         strokeWidth={3}
                         fillColor="rgba(128,0,32,0.12)"
                     />
+                )}
+
+                {(isConfiguring || isNavigating) && (
+                    <DirectionPath origin={origin} destination={destination}/>
                 )}
             </MapView>
 

@@ -32,6 +32,7 @@ export default ({ config }: any) => {
       ...(config.extra ?? {}),
       API_BASE_URL: apiBaseUrl,
       TARGET: target,
+      googleMapsApiKey: googleMapsAndroidKey,
     },
   };
 };
