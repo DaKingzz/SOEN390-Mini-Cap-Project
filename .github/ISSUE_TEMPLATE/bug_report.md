@@ -1,0 +1,88 @@
+name: Bug report
+about: Report a bug to help us improve the project
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐞 Bug Report
+        Please complete the sections below. Clear and detailed reports help us reproduce and fix issues faster.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clearly describe what the bug is.
+      placeholder: "When I try to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        List **all** steps required to reproduce the issue.
+        Add as many steps as necessary.
+      value: |
+        1.
+        2.
+        3.
+        4.
+        5.
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide details about the environment where the bug occurred.
+      placeholder: |
+        OS:
+        Browser:
+        App version:
+        Device:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots / Logs
+      description: |
+        Attach screenshots, error messages, or logs if available.
+        This section is optional but highly recommended.
+      render: shell
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity / Priority
+      description: How critical is this issue?
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: true

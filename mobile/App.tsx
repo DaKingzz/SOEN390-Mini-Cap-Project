@@ -2,6 +2,14 @@ import React, { useState } from "react";
 import { StyleSheet, Text, View, Button } from "react-native";
 import Constants from "expo-constants";
 import GoogleMap from './GoogleMap';
+import HomeUi from "./src/screens/HomeUi";
+
+export default function App() {
+  return <HomeUi />;
+}
+
+
+/* EXAMPLE OF LINKING FRONTEND WITH BACKEND
 
 export default function App() {
   const apiBaseUrl = (Constants.expoConfig?.extra as any)?.API_BASE_URL;
@@ -20,8 +28,9 @@ export default function App() {
 
   return (
      <View style={{ flex: 1 }}>
-
+        {
         <GoogleMap style={{ flex: 1 }} />
+        }
 
        <View style={styles.container}>
          <Text style={styles.title}>Backend Connectivity Test</Text>
@@ -44,3 +53,4 @@ const styles = StyleSheet.create({
   small: { fontSize: 12 },
   result: { fontSize: 16 },
 });
+*/

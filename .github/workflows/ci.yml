@@ -2,7 +2,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: ["main"]
+    branches: ['main']
   workflow_dispatch:
 
 concurrency:
@@ -19,6 +19,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       mobile: ${{ steps.filter.outputs.mobile }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,6 +40,21 @@ jobs:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: bigdataenergy
+          POSTGRES_PASSWORD: bigdataenergy
+          POSTGRES_DB: big_data_energy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     defaults:
       run:
         working-directory: backend
@@ -50,15 +66,17 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
-          java-version: "21"
-          cache: "maven"
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
       - name: Make mvnw executable
         run: chmod +x mvnw
 
       - name: Build & test (Maven Wrapper)
         run: ./mvnw -B -ntp clean verify
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
   mobile:
     name: Mobile (Expo) - install/doctor
@@ -76,8 +94,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install deps
@@ -87,6 +105,9 @@ jobs:
         run: |
           echo "TARGET=emulator" > .env
           echo "API_BASE_URL_EMULATOR=http://localhost:8080" >> .env
+
+      - name: Align Expo Dependencies
+        run: npx expo install --check || npx expo install
 
       - name: Expo doctor
         run: npx expo-doctor
