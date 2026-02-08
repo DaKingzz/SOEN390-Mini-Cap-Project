@@ -21,7 +21,7 @@
       "bundleIdentifier": "com.anonymous.mobile"
     },
     "android": {
-      "package": "com.anonymous.mobile",
+      "package": "com.soen390.conunav",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
