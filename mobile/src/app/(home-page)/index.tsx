@@ -14,7 +14,7 @@ import useNavigationState from "../../hooks/useNavigationState";
 import {NAVIGATION_STATE} from "../../const";
 import NavigationConfigView from "../../components/navigation-config/NavigationConfigView";
 import {styles as navStyles} from "../../components/BottomNav";
-import useEndpoints from "../../hooks/usePath";
+import useNavigationEndpoints from "../../hooks/useNavigationEndpoints";
 import DirectionPath from "../../components/DirectionPath";
 
 const SGW_CENTER = {latitude: 45.4973, longitude: -73.5790};
@@ -38,7 +38,7 @@ export default function HomePageIndex(props: HomePageIndexProps) {
     const router = useRouter();
     const [campus, setCampus] = useState<"SGW" | "LOYOLA">("SGW");
     const {setNavigationState, isNavigating, isConfiguring, isSearching} = useNavigationState();
-    const {origin, setOrigin, destination, setDestination} = useEndpoints();
+    const {origin, setOrigin, destination, setDestination} = useNavigationEndpoints();
     const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
     const navigation = useNavigation();
     const [region, setRegion] = useState<Region>({

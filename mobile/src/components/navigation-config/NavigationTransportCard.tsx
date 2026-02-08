@@ -1,20 +1,19 @@
 import React from "react";
 import { StyleSheet, Text, Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {TransportMode} from "../../type";
 
 const BURGUNDY = "#800020";
 const OFF_WHITE = "#F5F5F5";
 
-export type TransportMode = "WALK" | "BIKE" | "BUS" | "SHUTTLE";
-
-interface Props {
+interface NavigationTransportCardProps {
     mode: TransportMode;
     duration: string; // e.g. "5 mins" or "N/A"
     isSelected: boolean;
     onSelect: () => void;
 }
 
-export default function NavigationTransportCard({ mode, duration, isSelected, onSelect }: Props) {
+export default function NavigationTransportCard({ mode, duration, isSelected, onSelect }: NavigationTransportCardProps) {
     // Mapping mode to icon names
     const getIcon = () => {
         switch (mode) {

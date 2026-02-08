@@ -1,9 +1,9 @@
 import React, {useState} from "react";
 import {StyleSheet, View, Text} from "react-native";
 import BottomDrawer from "../BottomDrawer";
-import NavigationTransportCard, {TransportMode} from "./NavigationTransportCard";
-import NavigationGoButton from "./NavigationGoButton";
+import NavigationTransportCard from "./NavigationTransportCard";
 import NavigationPathRow from "./NavigationPathRow";
+import useNavigationConfig from "../../hooks/useNavigationConfig";
 
 interface NavigationConfigViewProps {
     visible: boolean;
@@ -11,11 +11,10 @@ interface NavigationConfigViewProps {
 }
 
 export default function NavigationConfigView({visible, onClose}: NavigationConfigViewProps) {
-    const [selectedMode, setSelectedMode] = useState<TransportMode>("WALK");
-
+    const {navigationMode, setNavigationMode} = useNavigationConfig();
     const handleGo = () => {
         // Logic to start the actual turn-by-turn navigation
-        console.log("Start navigation with mode:", selectedMode);
+        console.log("Start navigation with mode:", navigationMode);
     };
 
     return (
@@ -31,26 +30,26 @@ export default function NavigationConfigView({visible, onClose}: NavigationConfi
                 <NavigationTransportCard
                     mode="WALK"
                     duration="5 mins"
-                    isSelected={selectedMode === "WALK"}
-                    onSelect={() => setSelectedMode("WALK")}
+                    isSelected={navigationMode === "WALK"}
+                    onSelect={() => setNavigationMode("WALK")}
                 />
                 <NavigationTransportCard
                     mode="BIKE"
                     duration="5 mins"
-                    isSelected={selectedMode === "BIKE"}
-                    onSelect={() => setSelectedMode("BIKE")}
+                    isSelected={navigationMode === "BIKE"}
+                    onSelect={() => setNavigationMode("BIKE")}
                 />
                 <NavigationTransportCard
                     mode="BUS"
                     duration="N/A"
-                    isSelected={selectedMode === "BUS"}
-                    onSelect={() => setSelectedMode("BUS")}
+                    isSelected={navigationMode === "BUS"}
+                    onSelect={() => setNavigationMode("BUS")}
                 />
                 <NavigationTransportCard
                     mode="SHUTTLE"
                     duration="N/A"
-                    isSelected={selectedMode === "SHUTTLE"}
-                    onSelect={() => setSelectedMode("SHUTTLE")}
+                    isSelected={navigationMode === "SHUTTLE"}
+                    onSelect={() => setNavigationMode("SHUTTLE")}
                 />
             </View>
 
