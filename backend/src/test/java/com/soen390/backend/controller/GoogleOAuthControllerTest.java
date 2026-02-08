@@ -2,10 +2,13 @@ package com.soen390.backend.controller;
 
 import com.soen390.backend.config.RestTemplateConfig;
 import com.soen390.backend.service.GoogleOAuthService;
+import com.soen390.backend.service.GoogleSessionService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,6 +28,9 @@ public class GoogleOAuthControllerTest {
     @MockitoBean
     private GoogleOAuthService googleOAuthService;
 
+    @MockitoBean
+    private GoogleSessionService googleSessionService;
+
     @Test
     void testExchangeSuccess() throws Exception {
         when(googleOAuthService.exchangeServerAuthCode("valid-auth-code"))
@@ -35,7 +41,8 @@ public class GoogleOAuthControllerTest {
                         .content("{\"serverAuthCode\": \"valid-auth-code\"}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.sessionId").value("generated-session-id"));
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, org.hamcrest.Matchers.containsString("google_session_id=generated-session-id")))
+                .andExpect(jsonPath("$.connected").value(true));
     }
 
     @Test
@@ -95,5 +102,14 @@ public class GoogleOAuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(""))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testLogoutClearsCookie() throws Exception {
+        mockMvc.perform(post("/api/google/oauth/logout")
+                        .cookie(new Cookie("google_session_id", "session-123")))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, org.hamcrest.Matchers.containsString("google_session_id=")))
+                .andExpect(jsonPath("$.loggedOut").value(true));
     }
 }

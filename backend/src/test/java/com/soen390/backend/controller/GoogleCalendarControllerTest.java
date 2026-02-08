@@ -4,6 +4,7 @@ import com.soen390.backend.config.RestTemplateConfig;
 import com.soen390.backend.object.GoogleCalendarDto;
 import com.soen390.backend.object.GoogleEventDto;
 import com.soen390.backend.service.GoogleCalendarService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -46,7 +47,7 @@ public class GoogleCalendarControllerTest {
         when(googleCalendarService.listCalendars("valid-session-id")).thenReturn(calendars);
 
         mockMvc.perform(get("/api/google/calendars")
-                        .header("X-Session-Id", "valid-session-id"))
+                        .cookie(new Cookie("google_session_id", "valid-session-id")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(2))
@@ -64,7 +65,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/google/calendars")
-                        .header("X-Session-Id", "valid-session-id"))
+                        .cookie(new Cookie("google_session_id", "valid-session-id")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(0));
@@ -82,7 +83,7 @@ public class GoogleCalendarControllerTest {
                 .thenThrow(new RuntimeException("Missing sessionId."));
 
         mockMvc.perform(get("/api/google/calendars")
-                        .header("X-Session-Id", "   "))
+                        .cookie(new Cookie("google_session_id", "")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -92,7 +93,7 @@ public class GoogleCalendarControllerTest {
                 .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
 
         mockMvc.perform(get("/api/google/calendars")
-                        .header("X-Session-Id", "invalid-session"))
+                        .cookie(new Cookie("google_session_id", "invalid-session")))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -102,7 +103,7 @@ public class GoogleCalendarControllerTest {
                 .thenThrow(new RuntimeException("Session expired. Please sign in again."));
 
         mockMvc.perform(get("/api/google/calendars")
-                        .header("X-Session-Id", "expired-session"))
+                        .cookie(new Cookie("google_session_id", "expired-session")))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -121,7 +122,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(events);
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(2))
@@ -141,7 +142,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .param("days", "14"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
@@ -153,7 +154,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .param("timeZone", "America/New_York"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
@@ -165,7 +166,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/google/calendars/my-calendar/events")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .param("days", "30")
                         .param("timeZone", "Europe/London"))
                 .andExpect(status().isOk());
@@ -180,14 +181,14 @@ public class GoogleCalendarControllerTest {
     @Test
     void testImportCalendarBlankSessionIdReturns400() throws Exception {
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", "   "))
+                        .cookie(new Cookie("google_session_id", "")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void testImportCalendarEmptySessionIdReturns400() throws Exception {
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", ""))
+                        .cookie(new Cookie("google_session_id", "")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -197,7 +198,7 @@ public class GoogleCalendarControllerTest {
                 .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", "invalid-session"))
+                        .cookie(new Cookie("google_session_id", "invalid-session")))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -207,7 +208,7 @@ public class GoogleCalendarControllerTest {
                 .thenThrow(new RuntimeException("Google Events API error (404): Calendar not found"));
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -217,7 +218,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/google/calendars/user@example.com/events")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isOk());
     }
 
@@ -227,7 +228,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/google/calendars/empty-calendar/events")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(0));
@@ -244,7 +245,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(events);
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].location").doesNotExist());
         }
@@ -266,7 +267,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(nextEvent);
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value("event1"))
@@ -281,7 +282,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(null);
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
     }
@@ -292,7 +293,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(null);
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .param("days", "14")
                         .param("timeZone", "America/New_York"))
                 .andExpect(status().isNoContent());
@@ -307,7 +308,7 @@ public class GoogleCalendarControllerTest {
     @Test
     void testGetNextEventBlankSessionIdReturns400() throws Exception {
         mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .header("X-Session-Id", "   "))
+                        .cookie(new Cookie("google_session_id", "")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -317,7 +318,7 @@ public class GoogleCalendarControllerTest {
                 .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
 
         mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .header("X-Session-Id", "invalid-session"))
+                        .cookie(new Cookie("google_session_id", "invalid-session")))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -327,7 +328,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(null);
 
         mockMvc.perform(get("/api/google/calendars/user@example.com/next-event")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isNoContent());
     }
 
@@ -336,7 +337,7 @@ public class GoogleCalendarControllerTest {
     @Test
     void testSetSelectedCalendarSuccess() throws Exception {
         mockMvc.perform(put("/api/google/selected-calendar")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\":\"calendar-id\",\"summary\":\"School\",\"primary\":true}"))
                 .andExpect(status().isOk())
@@ -358,7 +359,7 @@ public class GoogleCalendarControllerTest {
     @Test
     void testSetSelectedCalendarMissingCalendarIdReturns400() throws Exception {
         mockMvc.perform(put("/api/google/selected-calendar")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"summary\":\"School\"}"))
                 .andExpect(status().isBadRequest());
@@ -371,7 +372,7 @@ public class GoogleCalendarControllerTest {
                 .setSelectedCalendar(eq("invalid-session"), any(GoogleCalendarDto.class));
 
         mockMvc.perform(put("/api/google/selected-calendar")
-                        .header("X-Session-Id", "invalid-session")
+                        .cookie(new Cookie("google_session_id", "invalid-session"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\":\"calendar-id\"}"))
                 .andExpect(status().isUnauthorized());
@@ -391,7 +392,7 @@ public class GoogleCalendarControllerTest {
                 ));
 
         mockMvc.perform(get("/api/google/state")
-                        .header("X-Session-Id", "valid-session"))
+                        .cookie(new Cookie("google_session_id", "valid-session")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.connected").value(true))
@@ -412,7 +413,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(state);
 
         mockMvc.perform(get("/api/google/state")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .param("days", "14")
                         .param("timeZone", "America/New_York"))
                 .andExpect(status().isOk())
@@ -432,7 +433,7 @@ public class GoogleCalendarControllerTest {
                 .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
 
         mockMvc.perform(get("/api/google/state")
-                        .header("X-Session-Id", "invalid-session"))
+                        .cookie(new Cookie("google_session_id", "invalid-session")))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -449,7 +450,7 @@ public class GoogleCalendarControllerTest {
                 .thenReturn(state);
 
         mockMvc.perform(get("/api/google/state")
-                        .header("X-Session-Id", "valid-session")
+                        .cookie(new Cookie("google_session_id", "valid-session"))
                         .param("includeCalendars", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.calendarSelected").value(false))
@@ -458,4 +459,3 @@ public class GoogleCalendarControllerTest {
     }
 
 }
-

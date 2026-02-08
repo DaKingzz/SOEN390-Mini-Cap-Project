@@ -13,15 +13,22 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class GoogleCalendarService {
 
+  private static final Pattern ROOM_PATTERN = Pattern.compile("\\bRm\\.?\\s*([A-Za-z0-9.\\-]+)\\b", Pattern.CASE_INSENSITIVE);
+  private static final Pattern CLASSROOM_PATTERN = Pattern.compile("Classroom:\\s*([A-Za-z0-9.\\-]+)", Pattern.CASE_INSENSITIVE);
   private final RestTemplate restTemplate;
   private final GoogleSessionService sessionService;
 
@@ -210,6 +217,10 @@ public class GoogleCalendarService {
     out.put("calendarSelected", calendarSelected);
     out.put("selectedCalendar", selectedCalendar);
     out.put("nextEvent", nextEvent);
+    out.put(
+        "nextEventDetailsText",
+        nextEvent != null ? formatEventDetailsText(nextEvent, timeZone) : "No upcoming events found in the next 7 days."
+    );
     if (includeCalendars) {
       List<GoogleCalendarDto> calendars = listCalendars(sessionId);
       out.put("calendars", calendars);
@@ -243,6 +254,87 @@ public class GoogleCalendarService {
       }
     }
   }
+
+  private String formatEventDetailsText(GoogleEventDto event, String timeZone) {
+    LocationParts location = parseBuildingAndRoom(event != null ? event.getLocation() : null);
+    String when = formatWhen(event, timeZone);
+    return location.campus() + "\n" + location.building() + "\nClassroom: " + location.room() + "\n" + when;
+  }
+
+  private LocationParts parseBuildingAndRoom(String locationRaw) {
+    String location = locationRaw != null ? locationRaw.trim() : "";
+    if (location.isEmpty()) {
+      return new LocationParts("(no campus)", "(no building)", "(missing)");
+    }
+
+    Matcher rmMatch = ROOM_PATTERN.matcher(location);
+    if (rmMatch.find()) {
+      String room = rmMatch.group(1) != null ? rmMatch.group(1).trim() : "(missing)";
+      String buildingLine = location.replace(rmMatch.group(0), "").trim();
+      String campus = "(no campus)";
+      String building = buildingLine;
+
+      int splitIdx = buildingLine.indexOf(" - ");
+      if (splitIdx >= 0) {
+        campus = buildingLine.substring(0, splitIdx).trim();
+        building = buildingLine.substring(splitIdx + 3).trim();
+      }
+
+      if (campus.isEmpty()) campus = "(no campus)";
+      if (building.isEmpty()) building = "(no building)";
+      if (room.isEmpty()) room = "(missing)";
+      return new LocationParts(campus, building, room);
+    }
+
+    Matcher classroomMatch = CLASSROOM_PATTERN.matcher(location);
+    if (classroomMatch.find()) {
+      String room = classroomMatch.group(1) != null ? classroomMatch.group(1).trim() : "(missing)";
+      if (room.isEmpty()) room = "(missing)";
+      return new LocationParts("(no campus)", "(no building)", room);
+    }
+
+    return new LocationParts("(no campus)", location, "(missing)");
+  }
+
+  private String formatWhen(GoogleEventDto event, String timeZone) {
+    if (event == null) {
+      return "(missing time)";
+    }
+    if (event.isAllDay()) {
+      return "All day";
+    }
+
+    Instant start = parseEventInstant(event.getStart());
+    Instant end = parseEventInstant(event.getEnd());
+    if (start == null || end == null) {
+      return "(missing time)";
+    }
+
+    ZoneId zone = ZoneId.of(timeZone);
+    ZonedDateTime startZdt = start.atZone(zone);
+    ZonedDateTime endZdt = end.atZone(zone);
+    String day = DateTimeFormatter.ofPattern("EEE", Locale.CANADA).format(startZdt);
+    String startT = DateTimeFormatter.ofPattern("HH:mm", Locale.CANADA).format(startZdt);
+    String endT = DateTimeFormatter.ofPattern("HH:mm", Locale.CANADA).format(endZdt);
+    return day + ", " + startT + " - " + endT;
+  }
+
+  private Instant parseEventInstant(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return OffsetDateTime.parse(value).toInstant();
+    } catch (DateTimeParseException e) {
+      try {
+        return Instant.parse(value);
+      } catch (DateTimeParseException ignored) {
+        return null;
+      }
+    }
+  }
+
+  private record LocationParts(String campus, String building, String room) {}
 }
 
 

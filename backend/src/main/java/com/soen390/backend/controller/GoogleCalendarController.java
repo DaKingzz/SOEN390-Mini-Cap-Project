@@ -15,6 +15,8 @@ import java.util.Map;
 @RequestMapping("/api/google")
 public class GoogleCalendarController {
 
+  private static final String GOOGLE_SESSION_COOKIE = "google_session_id";
+
   private final GoogleCalendarService googleCalendarService;
 
   public GoogleCalendarController(GoogleCalendarService googleCalendarService) {
@@ -22,13 +24,13 @@ public class GoogleCalendarController {
   }
 
   @GetMapping("/calendars")
-  public List<GoogleCalendarDto> calendars(@RequestHeader("X-Session-Id") String sessionId) {
-    if (sessionId == null || sessionId.isBlank()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-Session-Id header is required.");
-    }
+  public List<GoogleCalendarDto> calendars(
+      @CookieValue(value = GOOGLE_SESSION_COOKIE, required = false) String sessionId
+  ) {
+    String sid = requireSessionCookie(sessionId);
 
     try {
-      return googleCalendarService.listCalendars(sessionId);
+      return googleCalendarService.listCalendars(sid);
     } catch (RuntimeException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage(), e);
     }
@@ -36,17 +38,15 @@ public class GoogleCalendarController {
 
   @GetMapping("/calendars/{calendarId}/events")
   public List<GoogleEventDto> getCalendarEvents(
-      @RequestHeader("X-Session-Id") String sessionId,
+      @CookieValue(value = GOOGLE_SESSION_COOKIE, required = false) String sessionId,
       @PathVariable String calendarId,
       @RequestParam(defaultValue = "7") int days,
       @RequestParam(defaultValue = "America/Montreal") String timeZone
   ) {
-    if (sessionId == null || sessionId.isBlank()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-Session-Id header is required.");
-    }
+    String sid = requireSessionCookie(sessionId);
 
     try {
-      return googleCalendarService.importEvents(sessionId, calendarId, days, timeZone);
+      return googleCalendarService.importEvents(sid, calendarId, days, timeZone);
     } catch (RuntimeException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage(), e);
     }
@@ -54,17 +54,15 @@ public class GoogleCalendarController {
 
   @GetMapping("/calendars/{calendarId}/next-event")
   public ResponseEntity<GoogleEventDto> getNextEvent(
-      @RequestHeader("X-Session-Id") String sessionId,
+      @CookieValue(value = GOOGLE_SESSION_COOKIE, required = false) String sessionId,
       @PathVariable String calendarId,
       @RequestParam(defaultValue = "7") int days,
       @RequestParam(defaultValue = "America/Montreal") String timeZone
   ) {
-    if (sessionId == null || sessionId.isBlank()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-Session-Id header is required.");
-    }
+    String sid = requireSessionCookie(sessionId);
 
     try {
-      GoogleEventDto nextEvent = googleCalendarService.getNextEvent(sessionId, calendarId, days, timeZone);
+      GoogleEventDto nextEvent = googleCalendarService.getNextEvent(sid, calendarId, days, timeZone);
       if (nextEvent == null) {
         return ResponseEntity.noContent().build();
       }
@@ -76,12 +74,10 @@ public class GoogleCalendarController {
 
   @PutMapping("/selected-calendar")
   public Map<String, Object> setSelectedCalendar(
-      @RequestHeader("X-Session-Id") String sessionId,
+      @CookieValue(value = GOOGLE_SESSION_COOKIE, required = false) String sessionId,
       @RequestBody Map<String, Object> body
   ) {
-    if (sessionId == null || sessionId.isBlank()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-Session-Id header is required.");
-    }
+    String sid = requireSessionCookie(sessionId);
 
     if (body == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required.");
@@ -96,7 +92,7 @@ public class GoogleCalendarController {
     boolean primary = body.get("primary") instanceof Boolean b && b;
 
     try {
-      googleCalendarService.setSelectedCalendar(sessionId, new GoogleCalendarDto(calendarId, summary, primary));
+      googleCalendarService.setSelectedCalendar(sid, new GoogleCalendarDto(calendarId, summary, primary));
       return Map.of(
           "saved", true,
           "selectedCalendar", new GoogleCalendarDto(calendarId, summary, primary)
@@ -108,20 +104,25 @@ public class GoogleCalendarController {
 
   @GetMapping("/state")
   public Map<String, Object> state(
-      @RequestHeader("X-Session-Id") String sessionId,
+      @CookieValue(value = GOOGLE_SESSION_COOKIE, required = false) String sessionId,
       @RequestParam(defaultValue = "7") int days,
       @RequestParam(defaultValue = "America/Montreal") String timeZone,
       @RequestParam(defaultValue = "false") boolean includeCalendars
   ) {
-    if (sessionId == null || sessionId.isBlank()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-Session-Id header is required.");
-    }
+    String sid = requireSessionCookie(sessionId);
 
     try {
-      return googleCalendarService.getState(sessionId, days, timeZone, includeCalendars);
+      return googleCalendarService.getState(sid, days, timeZone, includeCalendars);
     } catch (RuntimeException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage(), e);
     }
+  }
+
+  private String requireSessionCookie(String sessionId) {
+    if (sessionId == null || sessionId.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Google session cookie is required.");
+    }
+    return sessionId;
   }
 
 }

@@ -18,6 +18,13 @@ public class GoogleSessionService {
     return Optional.ofNullable(sessions.get(sessionId));
   }
 
+  public void remove(String sessionId) {
+    if (sessionId == null || sessionId.isBlank()) {
+      return;
+    }
+    sessions.remove(sessionId);
+  }
+
   public GoogleTokenSession require(String sessionId) {
     if (sessionId == null || sessionId.isBlank()) {
         throw new RuntimeException("Missing sessionId.");
