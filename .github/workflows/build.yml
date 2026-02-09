@@ -83,4 +83,5 @@ jobs:
           args: >
             -Dsonar.projectBaseDir=.
             -Dsonar.java.binaries=backend/target/classes
-            -Dsonar.java.libraries=backend/target/*.jar
+            -Dsonar.java.libraries=backend/target/*.jar,backend/target/dependency/*.jar
+
