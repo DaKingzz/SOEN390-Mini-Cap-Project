@@ -1,4 +1,4 @@
-appId: com.anonymous.mobile
+appId: com.soen390.conunav
 ---
 - launchApp
 - tapOn: "Enable Location"
@@ -6,3 +6,5 @@ appId: com.anonymous.mobile
 - assertVisible: "Loyola Campus"
 - tapOn: "SGW Campus"
 - tapOn: "Loyola Campus"
+- tapOn: "Map Marker"
+- tapOn: "Map Marker"

@@ -1,4 +1,4 @@
-appId: com.anonymous.mobile
+appId: com.soen390.conunav
 ---
 - launchApp
 - tapOn: "Enable Location"
