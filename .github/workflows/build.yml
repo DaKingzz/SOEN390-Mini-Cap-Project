@@ -64,7 +64,7 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: bigdataenergy
         run: mvn -B clean verify
 
-      - name: Copy backend dependencies for Sonar (creates backend/target/*.jar)
+      - name: Copy backend dependencies for Sonar
         working-directory: backend
         run: mvn -B -DskipTests dependency:copy-dependencies -DoutputDirectory=target/dependency
 
@@ -79,9 +79,3 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectBaseDir=.
-            -Dsonar.java.binaries=backend/target/classes
-            -Dsonar.java.libraries=backend/target/*.jar,backend/target/dependency/*.jar
-
