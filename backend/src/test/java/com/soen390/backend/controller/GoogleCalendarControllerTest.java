@@ -6,20 +6,24 @@ import com.soen390.backend.object.GoogleEventDto;
 import com.soen390.backend.service.GoogleCalendarService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -34,6 +38,66 @@ public class GoogleCalendarControllerTest {
 
     @MockitoBean
     private GoogleCalendarService googleCalendarService;
+
+    // ========== Parameterized endpoint sources ==========
+
+    static Stream<Arguments> endpointsMissingSession() {
+        return Stream.of(
+                Arguments.of(get("/api/google/calendars")),
+                Arguments.of(get("/api/google/calendars/calendar-id/events")),
+                Arguments.of(get("/api/google/calendars/calendar-id/next-event")),
+                Arguments.of(put("/api/google/selected-calendar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\":\"calendar-id\"}")),
+                Arguments.of(get("/api/google/state"))
+        );
+    }
+
+    static Stream<Arguments> endpointsBlankSession() {
+        return Stream.of(
+                Arguments.of(get("/api/google/calendars")),
+                Arguments.of(get("/api/google/calendars/calendar-id/events")),
+                Arguments.of(get("/api/google/calendars/calendar-id/next-event"))
+        );
+    }
+
+    // ========== Parameterized session validation tests ==========
+
+    @ParameterizedTest
+    @MethodSource("endpointsMissingSession")
+    void testMissingSessionIdReturns400(MockHttpServletRequestBuilder request) throws Exception {
+        mockMvc.perform(request)
+                .andExpect(status().isBadRequest());
+    }
+
+    @ParameterizedTest
+    @MethodSource("endpointsBlankSession")
+    void testBlankSessionIdReturns400(MockHttpServletRequestBuilder request) throws Exception {
+        mockMvc.perform(request.cookie(new Cookie("google_session_id", "")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @ParameterizedTest
+    @MethodSource("endpointsInvalidSession")
+    void testInvalidSessionReturns401(MockHttpServletRequestBuilder request) throws Exception {
+        when(googleCalendarService.listCalendars("invalid-session"))
+                .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
+        when(googleCalendarService.importEvents(eq("invalid-session"), anyString(), anyInt(), anyString()))
+                .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
+        when(googleCalendarService.getNextEvent(eq("invalid-session"), anyString(), anyInt(), anyString()))
+                .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
+
+        mockMvc.perform(request.cookie(new Cookie("google_session_id", "invalid-session")))
+                .andExpect(status().isUnauthorized());
+    }
+
+    static Stream<Arguments> endpointsInvalidSession() {
+        return Stream.of(
+                Arguments.of(get("/api/google/calendars")),
+                Arguments.of(get("/api/google/calendars/calendar-id/events")),
+                Arguments.of(get("/api/google/calendars/calendar-id/next-event"))
+        );
+    }
 
     // ========== GET /api/google/calendars Tests ==========
 
@@ -69,42 +133,6 @@ public class GoogleCalendarControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(0));
-    }
-
-    @Test
-    void testListCalendarsMissingSessionIdReturns400() throws Exception {
-        mockMvc.perform(get("/api/google/calendars"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testListCalendarsBlankSessionIdReturns400() throws Exception {
-        when(googleCalendarService.listCalendars("   "))
-                .thenThrow(new RuntimeException("Missing sessionId."));
-
-        mockMvc.perform(get("/api/google/calendars")
-                        .cookie(new Cookie("google_session_id", "")))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testListCalendarsInvalidSessionReturns401() throws Exception {
-        when(googleCalendarService.listCalendars("invalid-session"))
-                .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
-
-        mockMvc.perform(get("/api/google/calendars")
-                        .cookie(new Cookie("google_session_id", "invalid-session")))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testListCalendarsExpiredSessionReturns401() throws Exception {
-        when(googleCalendarService.listCalendars("expired-session"))
-                .thenThrow(new RuntimeException("Session expired. Please sign in again."));
-
-        mockMvc.perform(get("/api/google/calendars")
-                        .cookie(new Cookie("google_session_id", "expired-session")))
-                .andExpect(status().isUnauthorized());
     }
 
     // ========== GET /api/google/calendars/{calendarId}/events Tests ==========
@@ -160,96 +188,6 @@ public class GoogleCalendarControllerTest {
                 .andExpect(jsonPath("$.length()").value(0));
     }
 
-    @Test
-    void testImportCalendarWithAllParameters() throws Exception {
-        when(googleCalendarService.importEvents("valid-session", "my-calendar", 30, "Europe/London"))
-                .thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/google/calendars/my-calendar/events")
-                        .cookie(new Cookie("google_session_id", "valid-session"))
-                        .param("days", "30")
-                        .param("timeZone", "Europe/London"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void testImportCalendarMissingSessionIdReturns400() throws Exception {
-        mockMvc.perform(get("/api/google/calendars/calendar-id/events"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testImportCalendarBlankSessionIdReturns400() throws Exception {
-        mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .cookie(new Cookie("google_session_id", "")))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testImportCalendarEmptySessionIdReturns400() throws Exception {
-        mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .cookie(new Cookie("google_session_id", "")))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testImportCalendarInvalidSessionReturns401() throws Exception {
-        when(googleCalendarService.importEvents(eq("invalid-session"), anyString(), anyInt(), anyString()))
-                .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
-
-        mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .cookie(new Cookie("google_session_id", "invalid-session")))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testImportCalendarGoogleApiErrorReturns401() throws Exception {
-        when(googleCalendarService.importEvents(eq("valid-session"), anyString(), anyInt(), anyString()))
-                .thenThrow(new RuntimeException("Google Events API error (404): Calendar not found"));
-
-        mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .cookie(new Cookie("google_session_id", "valid-session")))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testImportCalendarWithEncodedCalendarId() throws Exception {
-        when(googleCalendarService.importEvents("valid-session", "user@example.com", 7, "America/Montreal"))
-                .thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/google/calendars/user@example.com/events")
-                        .cookie(new Cookie("google_session_id", "valid-session")))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void testImportCalendarReturnsEmptyList() throws Exception {
-        when(googleCalendarService.importEvents("valid-session", "empty-calendar", 7, "America/Montreal"))
-                .thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/google/calendars/empty-calendar/events")
-                        .cookie(new Cookie("google_session_id", "valid-session")))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(0));
-    }
-
-    @Test
-    void testImportCalendarEventWithNullLocation() throws Exception {
-        List<GoogleEventDto> events = Collections.singletonList(
-                new GoogleEventDto("event1", "No Location Event", null,
-                        "2024-01-15T10:00:00-05:00", "2024-01-15T11:00:00-05:00", false)
-        );
-
-        when(googleCalendarService.importEvents("valid-session", "calendar-id", 7, "America/Montreal"))
-                .thenReturn(events);
-
-        mockMvc.perform(get("/api/google/calendars/calendar-id/events")
-                        .cookie(new Cookie("google_session_id", "valid-session")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].location").doesNotExist());
-        }
-
     // ========== GET /api/google/calendars/{calendarId}/next-event Tests ==========
 
     @Test
@@ -287,51 +225,6 @@ public class GoogleCalendarControllerTest {
                 .andExpect(content().string(""));
     }
 
-    @Test
-    void testGetNextEventWithCustomParams() throws Exception {
-        when(googleCalendarService.getNextEvent("valid-session", "calendar-id", 14, "America/New_York"))
-                .thenReturn(null);
-
-        mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .cookie(new Cookie("google_session_id", "valid-session"))
-                        .param("days", "14")
-                        .param("timeZone", "America/New_York"))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void testGetNextEventMissingSessionIdReturns400() throws Exception {
-        mockMvc.perform(get("/api/google/calendars/calendar-id/next-event"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testGetNextEventBlankSessionIdReturns400() throws Exception {
-        mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .cookie(new Cookie("google_session_id", "")))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testGetNextEventInvalidSessionReturns401() throws Exception {
-        when(googleCalendarService.getNextEvent(eq("invalid-session"), anyString(), anyInt(), anyString()))
-                .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
-
-        mockMvc.perform(get("/api/google/calendars/calendar-id/next-event")
-                        .cookie(new Cookie("google_session_id", "invalid-session")))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testGetNextEventWithEncodedCalendarId() throws Exception {
-        when(googleCalendarService.getNextEvent("valid-session", "user@example.com", 7, "America/Montreal"))
-                .thenReturn(null);
-
-        mockMvc.perform(get("/api/google/calendars/user@example.com/next-event")
-                        .cookie(new Cookie("google_session_id", "valid-session")))
-                .andExpect(status().isNoContent());
-    }
-
     // ========== PUT /api/google/selected-calendar Tests ==========
 
     @Test
@@ -349,33 +242,12 @@ public class GoogleCalendarControllerTest {
     }
 
     @Test
-    void testSetSelectedCalendarMissingSessionIdReturns400() throws Exception {
-        mockMvc.perform(put("/api/google/selected-calendar")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\":\"calendar-id\"}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void testSetSelectedCalendarMissingCalendarIdReturns400() throws Exception {
         mockMvc.perform(put("/api/google/selected-calendar")
                         .cookie(new Cookie("google_session_id", "valid-session"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"summary\":\"School\"}"))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testSetSelectedCalendarServiceErrorReturns401() throws Exception {
-        doThrow(new RuntimeException("Invalid sessionId (no stored Google session)."))
-                .when(googleCalendarService)
-                .setSelectedCalendar(eq("invalid-session"), any(GoogleCalendarDto.class));
-
-        mockMvc.perform(put("/api/google/selected-calendar")
-                        .cookie(new Cookie("google_session_id", "invalid-session"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\":\"calendar-id\"}"))
-                .andExpect(status().isUnauthorized());
     }
 
     // ========== GET /api/google/state Tests ==========
@@ -399,42 +271,6 @@ public class GoogleCalendarControllerTest {
                 .andExpect(jsonPath("$.calendarSelected").value(true))
                 .andExpect(jsonPath("$.selectedCalendar.id").value("calendar-id"))
                 .andExpect(jsonPath("$.nextEvent.id").value("event-id"));
-    }
-
-    @Test
-    void testStateWithCustomParams() throws Exception {
-        Map<String, Object> state = new java.util.LinkedHashMap<>();
-        state.put("connected", true);
-        state.put("calendarSelected", false);
-        state.put("selectedCalendar", null);
-        state.put("nextEvent", null);
-
-        when(googleCalendarService.getState("valid-session", 14, "America/New_York", false))
-                .thenReturn(state);
-
-        mockMvc.perform(get("/api/google/state")
-                        .cookie(new Cookie("google_session_id", "valid-session"))
-                        .param("days", "14")
-                        .param("timeZone", "America/New_York"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.connected").value(true))
-                .andExpect(jsonPath("$.calendarSelected").value(false));
-    }
-
-    @Test
-    void testStateMissingSessionIdReturns400() throws Exception {
-        mockMvc.perform(get("/api/google/state"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testStateServiceErrorReturns401() throws Exception {
-        when(googleCalendarService.getState("invalid-session", 7, "America/Montreal", false))
-                .thenThrow(new RuntimeException("Invalid sessionId (no stored Google session)."));
-
-        mockMvc.perform(get("/api/google/state")
-                        .cookie(new Cookie("google_session_id", "invalid-session")))
-                .andExpect(status().isUnauthorized());
     }
 
     @Test

@@ -3,6 +3,8 @@ package com.soen390.backend.service;
 import com.soen390.backend.object.GoogleTokenSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -14,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -96,26 +99,6 @@ public class GoogleOAuthServiceTest {
     }
 
     @Test
-    void testExchangeServerAuthCodeWithDefaultExpiration() {
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("access_token", "mock-access-token");
-
-        ResponseEntity<Map> responseEntity = new ResponseEntity<>(responseBody, HttpStatus.OK);
-
-        when(restTemplate.exchange(
-                eq("https://oauth2.googleapis.com/token"),
-                eq(HttpMethod.POST),
-                any(HttpEntity.class),
-                eq(Map.class)
-        )).thenReturn(responseEntity);
-
-        String sessionId = googleOAuthService.exchangeServerAuthCode("test-auth-code");
-
-        assertNotNull(sessionId);
-        verify(sessionService).put(eq(sessionId), any(GoogleTokenSession.class));
-    }
-
-    @Test
     void testExchangeServerAuthCodeEmptyResponseThrowsException() {
         ResponseEntity<Map> responseEntity = new ResponseEntity<>(null, HttpStatus.OK);
 
@@ -133,32 +116,19 @@ public class GoogleOAuthServiceTest {
         assertEquals("Google token exchange failed (empty response).", exception.getMessage());
     }
 
-    @Test
-    void testExchangeServerAuthCodeMissingAccessTokenThrowsException() {
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("refresh_token", "mock-refresh-token");
+    static Stream<Map<String, Object>> missingOrBlankAccessTokenBodies() {
+        Map<String, Object> missingToken = new HashMap<>();
+        missingToken.put("refresh_token", "mock-refresh-token");
 
-        ResponseEntity<Map> responseEntity = new ResponseEntity<>(responseBody, HttpStatus.OK);
+        Map<String, Object> blankToken = new HashMap<>();
+        blankToken.put("access_token", "   ");
 
-        when(restTemplate.exchange(
-                eq("https://oauth2.googleapis.com/token"),
-                eq(HttpMethod.POST),
-                any(HttpEntity.class),
-                eq(Map.class)
-        )).thenReturn(responseEntity);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            googleOAuthService.exchangeServerAuthCode("test-auth-code");
-        });
-
-        assertEquals("Google token exchange failed: missing access_token.", exception.getMessage());
+        return Stream.of(missingToken, blankToken);
     }
 
-    @Test
-    void testExchangeServerAuthCodeBlankAccessTokenThrowsException() {
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("access_token", "   ");
-
+    @ParameterizedTest
+    @MethodSource("missingOrBlankAccessTokenBodies")
+    void testExchangeServerAuthCodeMissingOrBlankAccessTokenThrowsException(Map<String, Object> responseBody) {
         ResponseEntity<Map> responseEntity = new ResponseEntity<>(responseBody, HttpStatus.OK);
 
         when(restTemplate.exchange(

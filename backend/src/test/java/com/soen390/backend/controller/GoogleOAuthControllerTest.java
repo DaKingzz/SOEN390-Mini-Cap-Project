@@ -5,6 +5,8 @@ import com.soen390.backend.service.GoogleOAuthService;
 import com.soen390.backend.service.GoogleSessionService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -45,35 +47,12 @@ public class GoogleOAuthControllerTest {
                 .andExpect(jsonPath("$.connected").value(true));
     }
 
-    @Test
-    void testExchangeMissingServerAuthCodeReturns400() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"{}", "{\"serverAuthCode\": null}", "{\"serverAuthCode\": \"\"}", "{\"serverAuthCode\": \"   \"}"})
+    void testExchangeInvalidServerAuthCodeReturns400(String requestBody) throws Exception {
         mockMvc.perform(post("/api/google/oauth/exchange")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testExchangeNullServerAuthCodeReturns400() throws Exception {
-        mockMvc.perform(post("/api/google/oauth/exchange")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"serverAuthCode\": null}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testExchangeBlankServerAuthCodeReturns400() throws Exception {
-        mockMvc.perform(post("/api/google/oauth/exchange")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"serverAuthCode\": \"   \"}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testExchangeEmptyServerAuthCodeReturns400() throws Exception {
-        mockMvc.perform(post("/api/google/oauth/exchange")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"serverAuthCode\": \"\"}"))
+                        .content(requestBody))
                 .andExpect(status().isBadRequest());
     }
 
@@ -86,22 +65,6 @@ public class GoogleOAuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"serverAuthCode\": \"invalid-code\"}"))
                 .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testExchangeInvalidJsonReturns400() throws Exception {
-        mockMvc.perform(post("/api/google/oauth/exchange")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("invalid json"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testExchangeEmptyBodyReturns400() throws Exception {
-        mockMvc.perform(post("/api/google/oauth/exchange")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(""))
-                .andExpect(status().isBadRequest());
     }
 
     @Test

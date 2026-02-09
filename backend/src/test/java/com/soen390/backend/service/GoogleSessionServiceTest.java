@@ -3,6 +3,9 @@ package com.soen390.backend.service;
 import com.soen390.backend.object.GoogleTokenSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -53,28 +56,12 @@ public class GoogleSessionServiceTest {
         assertEquals("access-token", retrieved.getAccessToken());
     }
 
-    @Test
-    void testRequireWithNullSessionIdThrowsException() {
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void testRequireWithNullEmptyOrBlankSessionIdThrowsException(String sessionId) {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            sessionService.require(null);
-        });
-
-        assertEquals("Missing sessionId.", exception.getMessage());
-    }
-
-    @Test
-    void testRequireWithBlankSessionIdThrowsException() {
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            sessionService.require("   ");
-        });
-
-        assertEquals("Missing sessionId.", exception.getMessage());
-    }
-
-    @Test
-    void testRequireWithEmptySessionIdThrowsException() {
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            sessionService.require("");
+            sessionService.require(sessionId);
         });
 
         assertEquals("Missing sessionId.", exception.getMessage());
