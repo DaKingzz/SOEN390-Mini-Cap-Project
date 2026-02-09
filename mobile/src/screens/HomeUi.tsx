@@ -97,7 +97,7 @@ export default function HomeUi() {
     mapRef.current?.animateToRegion(r, 650);
   };
 
-  // Merker Freeze
+  // Marker Freeze
   const scheduleFreezeMarkers = () => {
     // Clear any previous timer
     if (freezeTimerRef.current) clearTimeout(freezeTimerRef.current);
