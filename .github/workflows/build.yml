@@ -4,12 +4,13 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [ opened, synchronize, reopened ]
 
 jobs:
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,10 +23,35 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Build backend
-        run: mvn -B clean package -DskipTests
-        working-directory: backend
+      # ---- Frontend / TypeScript (fixes missing extended tsconfig, if it comes from node_modules) ----
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          # change this to your actual frontend folder if different
+          cache-dependency-path: frontend/package-lock.json
 
+      - name: Install frontend dependencies
+        # change working-directory to where your package.json actually is:
+        working-directory: frontend
+        run: npm ci
+
+      # Optional: build frontend (not required for Sonar warnings, but good CI hygiene)
+      # - name: Build frontend
+      #   working-directory: frontend
+      #   run: npm run build --if-present
+
+      # ---- Backend / Java (fixes sonar.java.libraries warning) ----
+      - name: Build backend
+        working-directory: backend
+        run: mvn -B clean verify
+
+      - name: Copy backend dependencies for Sonar (creates backend/target/dependency/*.jar)
+        working-directory: backend
+        run: mvn -B -DskipTests dependency:copy-dependencies -DoutputDirectory=target/dependency
+
+      # ---- SonarQube Scan ----
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -33,3 +59,4 @@ jobs:
         with:
           args: >
             -Dsonar.java.binaries=backend/target/classes
+            -Dsonar.java.libraries=backend/target/dependency/*.jar
