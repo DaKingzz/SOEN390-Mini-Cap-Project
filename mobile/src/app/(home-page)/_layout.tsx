@@ -1,4 +1,3 @@
-// C:\Projects\SOEN390-Mini-Cap-Project\mobile\src\app\(home-page)\_layout.tsx
 import { Stack } from "expo-router";
 
 export default function HomePageLayout() {
@@ -6,6 +5,7 @@ export default function HomePageLayout() {
         <Stack
             screenOptions={{
                 headerShown: false,
+                headerBackButtonMenuEnabled: false,
             }}
         />
     );

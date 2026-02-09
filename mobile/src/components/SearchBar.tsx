@@ -10,6 +10,7 @@ export default function SearchBar({
   onPress: () => void;
 }) {
   return (
+    
     <Pressable onPress={onPress} style={styles.container}>
       <Ionicons name="search" size={18} />
       <Text style={styles.text}>{placeholder}</Text>
@@ -18,6 +19,7 @@ export default function SearchBar({
     </Pressable>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

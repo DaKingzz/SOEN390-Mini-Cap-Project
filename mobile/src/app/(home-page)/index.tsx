@@ -1,6 +1,6 @@
 import React, {useState, useRef, useEffect} from 'react';
-import {StyleSheet, View, Alert} from "react-native";
-import {useNavigation, useRouter} from "expo-router";
+import {StyleSheet, View, Alert, Text, Pressable} from "react-native";
+import {useNavigation} from "expo-router";
 import MapView, {Marker, Polygon, PROVIDER_GOOGLE, Region} from "react-native-maps";
 import * as Location from 'expo-location';
 import SearchBar from "../../components/SearchBar";
@@ -35,12 +35,13 @@ interface HomePageIndexProps {
 }
 
 export default function HomePageIndex(props: HomePageIndexProps) {
-    const router = useRouter();
+    const navigation = useNavigation();
     const [campus, setCampus] = useState<"SGW" | "LOYOLA">("SGW");
     const {setNavigationState, isNavigating, isConfiguring, isSearching} = useNavigationState();
     const {origin, setOrigin, destination, setDestination} = useNavigationEndpoints();
     const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
-    const navigation = useNavigation();
+    // When true, show enable-location prompt inline and do NOT mount MapView (so map gets proper layout when we show it)
+    const [showEnableLocation, setShowEnableLocation] = useState(true);
     const [region, setRegion] = useState<Region>({
         latitude: SGW_CENTER.latitude,
         longitude: SGW_CENTER.longitude,
@@ -63,11 +64,12 @@ export default function HomePageIndex(props: HomePageIndexProps) {
     }, []);
 
     useEffect(() => {
-        // When showing the map, let markers render, then freeze them
-        setFreezeMarkers(false);
-        const t = setTimeout(() => setFreezeMarkers(true), FREEZE_MARKERS_AFTER_MS);
-        return () => clearTimeout(t);
-    }, []);
+        if (!showEnableLocation) {
+            setFreezeMarkers(false);
+            const t = setTimeout(() => setFreezeMarkers(true), FREEZE_MARKERS_AFTER_MS);
+            return () => clearTimeout(t);
+        }
+    }, [showEnableLocation]);
 
     useEffect(() => {
         // Define when the tab bar should be hidden
@@ -84,14 +86,11 @@ export default function HomePageIndex(props: HomePageIndexProps) {
         const {status} = await Location.getForegroundPermissionsAsync();
         const granted = status === "granted";
         setHasLocationPermission(granted);
-
-        // If no permission yet, show the enable location screen
-        if (!granted) {
-            router.push("/(home-page)/enable-location");
-        } else {
-            // If we have permission, start watching location
+        if (granted) {
+            setShowEnableLocation(false);
             await startWatchingLocation();
         }
+        // else keep showEnableLocation true so we show the inline prompt (MapView not mounted yet)
     };
 
     const stopWatchingLocation = () => {
@@ -132,11 +131,32 @@ export default function HomePageIndex(props: HomePageIndexProps) {
                 animateToRegion(r);
                 return;
             }
-            // Navigate to enable location screen
-            router.push("/(home-page)/enable-location");
+            setShowEnableLocation(true);
         } catch {
             Alert.alert("Location error", "Could not center the map.");
         }
+    };
+
+    const onEnableLocation = async () => {
+        try {
+            const granted = await Location.requestForegroundPermissionsAsync().then(({status}) => status === "granted");
+            if (!granted) {
+                Alert.alert("Permission denied", "You can enable location later in device settings.");
+                return;
+            }
+            setHasLocationPermission(true);
+            setShowEnableLocation(false);
+            const r = await getOneFix();
+            animateToRegion(r);
+            await startWatchingLocation();
+        } catch {
+            Alert.alert("Location error", "Could not retrieve your location.");
+        }
+    };
+
+    const onSkipLocation = () => {
+        setShowEnableLocation(false);
+        setHasLocationPermission(false);
     };
 
     const onChangeCampus = (next: "SGW" | "LOYOLA") => {
@@ -196,6 +216,33 @@ export default function HomePageIndex(props: HomePageIndexProps) {
         }
     };
 
+    if (showEnableLocation) {
+        return (
+            <View style={styles.root}>
+                <View style={styles.enableLocationContainer}>
+                    <View style={styles.enableLocationIconCircle}>
+                        <Text style={styles.enableLocationIcon}>📍</Text>
+                    </View>
+                    <Text style={styles.enableLocationTitle}>Enable Location Services</Text>
+                    <Text style={styles.enableLocationSubtitle}>
+                        To help you navigate Concordia's campus, we need access to your location.
+                    </Text>
+                    <View style={styles.enableLocationBullets}>
+                        <Text style={styles.enableLocationBullet}>• Real-time positioning on the map</Text>
+                        <Text style={styles.enableLocationBullet}>• Turn-by-turn directions</Text>
+                        <Text style={styles.enableLocationBullet}>• Nearby points of interest</Text>
+                    </View>
+                    <Pressable style={styles.enableLocationBtn} onPress={onEnableLocation}>
+                        <Text style={styles.enableLocationBtnText}>Enable Location</Text>
+                    </Pressable>
+                    <Pressable style={styles.enableLocationSkip} onPress={onSkipLocation}>
+                        <Text style={styles.enableLocationSkipText}>Skip for now</Text>
+                    </Pressable>
+                </View>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.root}>
             <MapView
@@ -211,7 +258,8 @@ export default function HomePageIndex(props: HomePageIndexProps) {
                     setNavigationState(NAVIGATION_STATE.IDLE);
                 }}
             >
-                {BUILDINGS.map((b) => (
+
+            {BUILDINGS.map((b) => (
                     <Marker
                         key={b.id}
                         coordinate={b.marker}
@@ -241,8 +289,13 @@ export default function HomePageIndex(props: HomePageIndexProps) {
 
             {showBuildingPopup && selectedBuilding && (
                 <BuildingPopup
+                    id={selectedBuilding.id}
                     name={selectedBuilding.name}
                     addressLines={selectedBuilding.addressLines}
+                    openingHours={selectedBuilding.openingHours.label}
+                    hasStudySpots={selectedBuilding.hasStudySpots}
+                    image={selectedBuilding.image}
+                    accessibility={selectedBuilding.accessibility}
                     onClose={() => setShowBuildingPopup(false)}
                     onDirections={() => onPressDirections()}
                 />
@@ -266,10 +319,48 @@ export default function HomePageIndex(props: HomePageIndexProps) {
 }
 
 const styles = StyleSheet.create({
-    root: {flex: 1, backgroundColor: "#fff"},
-
-    searchWrapper: {position: "absolute", top: 50, left: 16, right: 16},
-
+    root: { flex: 1, backgroundColor: "#fff" },
+    enableLocationContainer: {
+        flex: 1,
+        paddingTop: 80,
+        paddingHorizontal: 24,
+    },
+    enableLocationIconCircle: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: "rgba(128,0,32,0.18)",
+        alignSelf: "center",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 22,
+    },
+    enableLocationIcon: { fontSize: 40 },
+    enableLocationTitle: {
+        fontSize: 22,
+        fontWeight: "700",
+        textAlign: "center",
+        marginBottom: 10,
+    },
+    enableLocationSubtitle: {
+        textAlign: "center",
+        color: "#666",
+        lineHeight: 20,
+        marginBottom: 24,
+    },
+    enableLocationBullets: { gap: 12, marginBottom: 28 },
+    enableLocationBullet: { color: "#333", fontWeight: "600" },
+    enableLocationBtn: {
+        backgroundColor: BURGUNDY,
+        borderRadius: 14,
+        paddingVertical: 16,
+        alignItems: "center",
+        marginTop: 10,
+    },
+    enableLocationBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+    enableLocationSkip: { paddingVertical: 14, alignItems: "center" },
+    enableLocationSkipText: { color: "#777", fontWeight: "600" },
+    searchWrapper: { position: "absolute", top: 50, left: 16, right: 16 },
     campusWrapper: {
         position: "absolute",
         left: 16,

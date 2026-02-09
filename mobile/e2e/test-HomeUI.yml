@@ -1,0 +1,8 @@
+appId: com.anonymous.mobile
+---
+- launchApp
+- tapOn: "Enable Location"
+- assertVisible: "SGW Campus"
+- assertVisible: "Loyola Campus"
+- tapOn: "SGW Campus"
+- tapOn: "Loyola Campus"

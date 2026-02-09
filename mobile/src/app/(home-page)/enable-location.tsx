@@ -21,8 +21,8 @@ export default function EnableLocation() {
                 return;
             }
 
-            // Navigate back to map with location enabled
-            router.back();
+            // Replace this screen with map so native stack state stays in sync
+            router.replace("/(home-page)");
 
         } catch (error) {
             Alert.alert("Location error", "Could not retrieve your location.");
@@ -30,8 +30,8 @@ export default function EnableLocation() {
     };
 
     const onSkipLocation = () => {
-        // Just go back to the map without location
-        router.back();
+        // Replace with map so native stack state stays in sync
+        router.replace("/(home-page)");
     };
 
     return (

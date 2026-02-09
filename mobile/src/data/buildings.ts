@@ -1,16 +1,36 @@
-export type BuildingId = "FB" | "EV" | "LB" | "H" | "CL" | "MB" | "LS" | "ER" | "VL" | "HU" | "SP" | "AD" | "CC" | "SC" | "CJ";
+export type BuildingId = string;
+
 export type LatLng = { latitude: number; longitude: number };
 
+export type Accessibility = {
+  hasElevator: boolean;
+  hasParking: boolean;
+  isAccessible: boolean;
+};
+
+export type OpeningHours = {
+  label: string; // e.g., "Mon–Fri 8:00–22:00"
+};
+
 export type Building = {
-  id: BuildingId;
+  id: BuildingId;               // "FB", "EV", ...
   name: string;
   marker: LatLng;
   polygon: LatLng[];
   addressLines: string[];
+
+  openingHours: OpeningHours;
+  hasStudySpots: boolean;
+
+  // Local image reference
+  // We use `any` because require(...) returns a number in RN.
+  image: any;
+
+  accessibility: Accessibility;
 };
 
 export const BUILDINGS: Building[] = [
-    // SGW SECTION OF BUILDINGS
+  // **************************** SGW SECTION OF BUILDINGS ****************************
   {
     id: "FB",
     name: "Faubourg Building",
@@ -22,10 +42,21 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.494282230157545, longitude: -73.57787841966426 },
       { latitude: 45.494733523816116, longitude: -73.5773725720098 },
     ],
+
+    openingHours: { label: "Mon–Fri 9:00–17:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/fb.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: true,
+      isAccessible: true,
+    },
   },
   {
     id: "EV",
-    name: "Engineering, Computer Scienece and Visual Arts Integreated Complex",
+    name: "Engineering, Computer Science and Visual Arts Integrated Complex",
     marker: { latitude: 45.49539, longitude: -73.57799 },
     addressLines: ["1515 Ste-Catherine St. W."],
     polygon: [
@@ -34,18 +65,40 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.4951955080872, longitude: -73.57790501481942 },
       { latitude: 45.495595554611526, longitude: -73.57876370936708 },
     ],
+
+    openingHours: { label: "Mon–Sun 8:30–19:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/ev.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
     id: "LB",
     name: "Webster Library",
     marker: { latitude: 45.496798007653645, longitude: -73.57803724265663 },
-    addressLines: ["1400 De Maisonneuve Blvd. W."],
+    addressLines: ["1515 Ste-Catherine St. W."],
     polygon: [
       { latitude: 45.49725895125797, longitude: -73.57805793642433 },
       { latitude: 45.49669002381621, longitude: -73.57860747092167 },
       { latitude: 45.49632255487784, longitude: -73.57784180151741 },
       { latitude: 45.49689470942183, longitude: -73.57728996771255 },
     ],
+
+    openingHours: { label: "Mon–Sun Open 24 hours" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/lb.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: true,
+      isAccessible: true,
+    },
   },
   {
     id: "H",
@@ -58,9 +111,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.49682738239871, longitude: -73.57884850437048 },
       { latitude: 45.49737535662623, longitude: -73.57834265669511 },
     ],
+
+    openingHours: { label: "Mon–Fri 9:00-17:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/h.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "CL",
+    id: "CL",
     name: "CL Annex",
     marker: { latitude: 45.49429413805923, longitude: -73.57920092745108 },
     addressLines: ["1665 Ste-Catherine St. W."],
@@ -70,9 +134,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.49426090276436, longitude: -73.57893576818257 },
       { latitude: 45.49447139263802, longitude: -73.57928433847859 },
     ],
+
+    openingHours: { label: "Mon–Fri 7:30-21:30" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/cl.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "MB",
+    id: "MB",
     name: "John Molson School of Business",
     marker: { latitude: 45.495297980272596, longitude: -73.57900517401788 },
     addressLines: ["1450 Guy St."],
@@ -82,9 +157,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.495019246570635, longitude: -73.57873156513509 },
       { latitude: 45.49520010371333, longitude: -73.57854615551052 },
     ],
+
+    openingHours: { label: "Mon–Fri 9:00-17:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/mb.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "LS",
+    id: "LS",
     name: "Learning Square",
     marker: { latitude: 45.49637488264317, longitude: -73.57948281092284 },
     addressLines: ["1535 De Maisonneuve Blvd. W."],
@@ -96,9 +182,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.49636474697219, longitude: -73.57958222215798 },
       { latitude: 45.496268457995846, longitude: -73.57967259600943 },
     ],
+
+    openingHours: { label: "Mon–Fri 9:00-17:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/ls.jpg"),
+
+    accessibility: {
+      hasElevator: false,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "ER",
+    id: "ER",
     name: "ER Building",
     marker: { latitude: 45.49638596930839, longitude: -73.58018822654073 },
     addressLines: ["2155 Guy St."],
@@ -108,11 +205,22 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.4966755048539, longitude: -73.58011580689558 },
       { latitude: 45.49628444350483, longitude: -73.58040548547616 },
     ],
+
+    openingHours: { label: "Mon–Fri 7:00-11:00 and Sat-Sun 9:00-21:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/er.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
 
-  // VANIER SECTION OF BUILDINGS
+  // **************************** LOYOLA SECTION OF BUILDINGS ****************************
   {
-  id: "VL",
+    id: "VL",
     name: "Vanier Libary Building",
     marker: { latitude: 45.45896275540376, longitude: -73.63859033366037 },
     addressLines: ["7141 Sherbrooke St. W."],
@@ -126,9 +234,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.45886492486679, longitude: -73.6382470108982 },
       { latitude: 45.45862034778173, longitude: -73.63843208332467 },
     ],
+
+    openingHours: { label: "Mon–Sun Open 24 hours" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/vl.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "HU",
+    id: "HU",
     name: "Applied Science Hub",
     marker: { latitude: 45.45850650474647, longitude: -73.64183117003009 },
     addressLines: ["7141 Sherbrooke St. W."],
@@ -138,9 +257,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.458572364225546, longitude: -73.64150924841056 },
       { latitude: 45.458295753896465, longitude: -73.64171581478308 },
     ],
+
+    openingHours: { label: "Restricted Access" },
+    hasStudySpots: false,
+
+    image: require("../../assets/buildings/hu.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "SP",
+    id: "SP",
     name: "Richard J. Renaud Science Complex",
     marker: { latitude: 45.45793786292976, longitude: -73.64147742435523 },
     addressLines: ["7141 Sherbrooke St. W."],
@@ -152,9 +282,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.457526208349194, longitude: -73.64146377611503 },
       { latitude: 45.45817001562751, longitude: -73.64097585123295 },
     ],
+
+    openingHours: { label: "~8:00-22:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/sp.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "AD",
+    id: "AD",
     name: "Administration Building",
     marker: { latitude: 45.45807527451618, longitude: -73.6398275776765 },
     addressLines: ["7141 Sherbrooke St. W."],
@@ -164,9 +305,20 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.4577972313859, longitude: -73.63982968614602 },
       { latitude: 45.4582527481411, longitude: -73.639448052283294 },
     ],
+
+    openingHours: { label: "Mon-Fri 10:00-16:00" },
+    hasStudySpots: false,
+
+    image: require("../../assets/buildings/ad.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: true,
+      isAccessible: true,
+    },
   },
   {
-  id: "CC",
+    id: "CC",
     name: "Central Building",
     marker: { latitude: 45.45828550714655, longitude: -73.640346666505855 },
     addressLines: ["7141 Sherbrooke St. W."],
@@ -176,29 +328,63 @@ export const BUILDINGS: Building[] = [
       { latitude: 45.458078848518866, longitude: -73.64001527546907 },
       { latitude: 45.45837856233265, longitude: -73.6407950546203 },
     ],
+
+    openingHours: { label: "Mon-Fri 7:00-23:00" },
+    hasStudySpots: true,
+
+    image: require("../../assets/buildings/cc.jpg"),
+
+    accessibility: {
+      hasElevator: true,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "SC",
+    id: "SC",
     name: "Student Centre",
     marker: { latitude: 45.459121999518935, longitude: -73.63921863357234 },
     addressLines: ["7141 Sherbrooke St. W."],
     polygon: [
       { latitude: 45.458996441307576, longitude: -73.63912084321551 },
-      { latitude:45.459124324668366, longitude: -73.63944239116847 },
+      { latitude: 45.459124324668366, longitude: -73.63944239116847 },
       { latitude: 45.45934288828713, longitude: -73.63925012538324 },
       { latitude: 45.45921616799489, longitude: -73.63892526250292 },
     ],
+
+    openingHours: { label: "Mon-Fri 10:00-16:00" },
+    hasStudySpots: false,
+
+    image: require("../../assets/buildings/sc.jpg"),
+
+    accessibility: {
+      hasElevator: false,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
   {
-  id: "CJ",
-    name: "Communication Studies and Journalism Building",
-    marker: { latitude: 45.459121999518935, longitude: -73.63921863357234 },
+    id: "HB",
+    name: "Hingston Hall, wing HB",
+    marker: { latitude: 45.459356110681796, longitude: -73.64181880514379 },
     addressLines: ["7141 Sherbrooke St. W."],
     polygon: [
-      { latitude: 45.458996441307576, longitude: -73.63912084321551 },
-      { latitude:45.459124324668366, longitude: -73.63944239116847 },
-      { latitude: 45.45934288828713, longitude: -73.63925012538324 },
-      { latitude: 45.45921616799489, longitude: -73.63892526250292 },
+      { latitude: 45.45953105655869, longitude: -73.64191644586813 },
+      { latitude: 45.459368316226254, longitude: -73.64149784751503 },
+      { latitude: 45.459163313079976, longitude: -73.64166086752297 },
+      { latitude: 45.45932604946066, longitude: -73.64209270318477 },
     ],
+
+    openingHours: { label: "~Mon-Fri 10:00-16:00, May Vary" },
+    hasStudySpots: false,
+
+    image: require("../../assets/buildings/hb.jpg"),
+
+    accessibility: {
+      hasElevator: false,
+      hasParking: false,
+      isAccessible: true,
+    },
   },
+
 ];

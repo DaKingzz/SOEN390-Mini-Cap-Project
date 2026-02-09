@@ -1,0 +1,8 @@
+appId: com.anonymous.mobile
+---
+- launchApp
+- tapOn: "Enable Location"
+- tapOn: "Search"
+- tapOn: "Search"
+- inputText: "Mcdona"
+- pressKey: Enter

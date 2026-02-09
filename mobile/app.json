@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "ConUNav",
     "slug": "mobile",
     "version": "1.0.0",
     "scheme": "conunav",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/adaptive-icon2.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/adaptive-icon2.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -24,14 +24,14 @@
         "ACCESS_COARSE_LOCATION"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon2.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/adaptive-icon2.png",
       "output": "server"
     }
   }
