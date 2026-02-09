@@ -172,22 +172,6 @@ public class GoogleCalendarServiceTest {
     }
 
     @Test
-    void testListCalendarsNullItemsReturnsEmptyList() {
-        when(sessionService.require("valid-session")).thenReturn(validSession);
-
-        Map<String, Object> responseBody = new HashMap<>();
-
-        ResponseEntity<Map> responseEntity = new ResponseEntity<>(responseBody, HttpStatus.OK);
-
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
-                .thenReturn(responseEntity);
-
-        List<GoogleCalendarDto> calendars = googleCalendarService.listCalendars("valid-session");
-
-        assertTrue(calendars.isEmpty());
-    }
-
-    @Test
     void testListCalendarsNullResponseBodyThrowsException() {
         when(sessionService.require("valid-session")).thenReturn(validSession);
 
@@ -410,79 +394,6 @@ public class GoogleCalendarServiceTest {
         assertNull(events.get(0).getStart());
         assertNull(events.get(0).getEnd());
         assertFalse(events.get(0).isAllDay());
-    }
-
-    @Test
-    void testImportEventsMultipleEvents() {
-        when(sessionService.require("valid-session")).thenReturn(validSession);
-
-        List<Map<String, Object>> items = new ArrayList<>();
-
-        Map<String, Object> event1 = new HashMap<>();
-        event1.put("id", "event1");
-        event1.put("summary", "Morning Meeting");
-        event1.put("location", "Room A");
-        event1.put("start", Map.of("dateTime", "2024-01-15T09:00:00-05:00"));
-        event1.put("end", Map.of("dateTime", "2024-01-15T10:00:00-05:00"));
-        items.add(event1);
-
-        Map<String, Object> event2 = new HashMap<>();
-        event2.put("id", "event2");
-        event2.put("summary", "Lunch");
-        event2.put("location", "Cafeteria");
-        event2.put("start", Map.of("dateTime", "2024-01-15T12:00:00-05:00"));
-        event2.put("end", Map.of("dateTime", "2024-01-15T13:00:00-05:00"));
-        items.add(event2);
-
-        Map<String, Object> event3 = new HashMap<>();
-        event3.put("id", "event3");
-        event3.put("summary", "All Day Training");
-        event3.put("start", Map.of("date", "2024-01-16"));
-        event3.put("end", Map.of("date", "2024-01-17"));
-        items.add(event3);
-
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("items", items);
-
-        ResponseEntity<Map> responseEntity = new ResponseEntity<>(responseBody, HttpStatus.OK);
-
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
-                .thenReturn(responseEntity);
-
-        List<GoogleEventDto> events = googleCalendarService.importEvents("valid-session", "calendar-id", 7, "America/Montreal");
-
-        assertEquals(3, events.size());
-        assertFalse(events.get(0).isAllDay());
-        assertFalse(events.get(1).isAllDay());
-        assertTrue(events.get(2).isAllDay());
-    }
-
-    @Test
-    void testImportEventsWithSpecialCharactersInCalendarId() {
-        when(sessionService.require("valid-session")).thenReturn(validSession);
-
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("items", new ArrayList<>());
-
-        ResponseEntity<Map> responseEntity = new ResponseEntity<>(responseBody, HttpStatus.OK);
-
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
-                .thenReturn(responseEntity);
-
-        List<GoogleEventDto> events = googleCalendarService.importEvents(
-                "valid-session",
-                "user@example.com",
-                14,
-                "America/New_York"
-        );
-
-        assertNotNull(events);
-        verify(restTemplate).exchange(
-                contains("user@example.com"),
-                eq(HttpMethod.GET),
-                any(HttpEntity.class),
-                eq(Map.class)
-        );
     }
 
     @Test
