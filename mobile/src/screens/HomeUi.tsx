@@ -9,6 +9,7 @@ import CampusSwitcher from "../components/CampusSwitcher";
 import BottomNav from "../components/BottomNav";
 import FloatingActionButton from "../components/FloatingActionButton";
 import SearchPanel from "../components/SearchPanel";
+import UpcomingEventButton from "../components/UpcomingEventButton";
 
 import SettingsScreen from "./SettingsScreen";
 import ShuttleScreen from "./ShuttleScreen";
@@ -255,11 +256,20 @@ export default function HomeUi() {
     return renderMapPage();
   };
 
+  const showMapOverlays = activeTab === "map" && !showEnableLocation;
+
   return (
     <View style={styles.root}>
       {renderContent()}
 
-      {activeTab === "map" && !showEnableLocation && (
+      <View
+        style={[styles.upcomingEventWrapper, !showMapOverlays && styles.overlayHidden]}
+        pointerEvents={showMapOverlays ? "auto" : "none"}
+      >
+        <UpcomingEventButton />
+      </View>
+
+      {showMapOverlays && (
         <>
           <View style={styles.searchWrapper}>
             <SearchBar placeholder="Search" onPress={() => setSearchOpen(true)} />
@@ -283,6 +293,8 @@ export default function HomeUi() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#fff" },
   searchWrapper: { position: "absolute", top: 50, left: 16, right: 16 },
+  upcomingEventWrapper: { position: "absolute", top: 108, left: 16, right: 16 },
+  overlayHidden: { opacity: 0 },
   campusWrapper: {
     position: "absolute",
     left: 16,

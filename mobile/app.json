@@ -7,6 +7,10 @@
     "icon": "./assets/adaptive-icon2.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "unimap",
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ],
     "splash": {
       "image": "./assets/adaptive-icon2.png",
       "resizeMode": "contain",
@@ -17,7 +21,7 @@
       "bundleIdentifier": "com.anonymous.mobile"
     },
     "android": {
-      "package": "com.anonymous.mobile",
+      "package": "com.soen390.conunav",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"

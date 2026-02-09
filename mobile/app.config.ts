@@ -10,6 +10,7 @@ export default ({ config }: any) => {
 
   // Google Maps key for Android, too me a while to get this working...
   const googleMapsAndroidKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY;
+  const googleWebClientId = process.env.GOOGLE_WEB_CLIENT_ID;
 
   return {
     ...config,
@@ -27,6 +28,7 @@ export default ({ config }: any) => {
       ...(config.extra ?? {}),
       API_BASE_URL: apiBaseUrl,
       TARGET: target,
+      GOOGLE_WEB_CLIENT_ID: googleWebClientId,
     },
   };
 };
