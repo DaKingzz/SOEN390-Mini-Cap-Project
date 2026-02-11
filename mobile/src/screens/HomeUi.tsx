@@ -24,6 +24,11 @@ type Tab = "settings" | "map" | "shuttle";
 const SGW_CENTER = { latitude: 45.4973, longitude: -73.5790 };
 const LOYOLA_CENTER = { latitude: 45.4582, longitude: -73.6405 };
 const CAMPUS_REGION_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
+const SHUTTLE_STOPS = {
+  SGW: { latitude: 45.497122, longitude: -73.578471 },
+  LOYOLA: { latitude: 45.45844144049705, longitude: -73.63831707854963 },
+} as const;
+
 
 const BURGUNDY = "#800020";
 
@@ -53,6 +58,12 @@ export default function HomeUi() {
     ...CAMPUS_REGION_DELTA,
   });
 
+  const [shuttleStop, setShuttleStop] = useState<{
+  campus: "SGW" | "LOYOLA";
+  coordinate: { latitude: number; longitude: number };
+} | null>(null);
+
+
   const [selectedBuildingId, setSelectedBuildingId] = useState<BuildingId | null>(null);
   const [outlineMode, setOutlineMode] = useState(false);
   const [showBuildingPopup, setShowBuildingPopup] = useState(false);
@@ -64,6 +75,36 @@ export default function HomeUi() {
 
   const mapRef = useRef<MapView>(null);
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+
+  useEffect(() => {
+    // When entering the map screen, let markers render, then freeze them
+    // Reset freeze when switching back to map to avoid invisible markers
+    if (activeTab === "map" && !showEnableLocation) {
+      setFreezeMarkers(false);
+      const t = setTimeout(() => setFreezeMarkers(true), FREEZE_MARKERS_AFTER_MS);
+
+      if (shuttleStop) {
+      requestAnimationFrame(() => {
+        mapRef.current?.animateToRegion(
+          {
+            latitude: shuttleStop.coordinate.latitude,
+            longitude: shuttleStop.coordinate.longitude,
+            ...CAMPUS_REGION_DELTA,
+          },
+          650
+        );
+      });
+    }
+      return () => clearTimeout(t);
+    }
+  }, [activeTab, showEnableLocation, shuttleStop]);
+
+  useEffect(() => {
+    if (activeTab !== "map") {
+      setShuttleStop(null);
+    }
+  }, [activeTab]);
+
 
   const stopWatchingLocation = () => {
     locationSubRef.current?.remove();
@@ -198,6 +239,15 @@ export default function HomeUi() {
     });
   };
 
+
+  const goToShuttleStop = (c: "SGW" | "LOYOLA") => {
+  const coord = SHUTTLE_STOPS[c];
+
+  setCampus(c);
+  setShuttleStop({ campus: c, coordinate: coord });
+  setActiveTab("map");
+};
+
   const onPressBuilding = (b: Building) => {
     if (selectedBuildingId !== b.id || !outlineMode) {
       enterOutlineForBuilding(b);
@@ -237,6 +287,15 @@ export default function HomeUi() {
             scheduleFreezeMarkers();
           }}
         >
+
+          {shuttleStop && (
+            <Marker
+              coordinate={shuttleStop.coordinate}
+              title={`${shuttleStop.campus} Shuttle Stop`}
+              pinColor={BURGUNDY}
+            />
+          )}
+
           {BUILDINGS.map((b) => (
             <Marker
               key={b.id}
@@ -280,7 +339,7 @@ export default function HomeUi() {
 
   const renderContent = () => {
     if (activeTab === "settings") return <SettingsScreen />;
-    if (activeTab === "shuttle") return <ShuttleScreen />;
+    if (activeTab === "shuttle") return <ShuttleScreen onDirections={goToShuttleStop} />;
     return renderMapPage();
   };
 
