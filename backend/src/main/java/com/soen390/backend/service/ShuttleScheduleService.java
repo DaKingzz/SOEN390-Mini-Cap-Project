@@ -1,10 +1,10 @@
 package com.soen390.backend.service;
 
 import com.soen390.backend.object.ShuttleSchedule;
+import com.soen390.backend.object.ShuttleScheduleResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ShuttleScheduleService {
@@ -25,11 +25,8 @@ public class ShuttleScheduleService {
         return version;
     }
 
-    public Map<String, Object> getScheduleResponse() {
-        return Map.of(
-                "schedules", schedules,
-                "version", version
-        );
+    public ShuttleScheduleResponse getScheduleResponse() {
+        return new ShuttleScheduleResponse(schedules, version);
     }
 
     private static List<ShuttleSchedule> buildSchedules() {

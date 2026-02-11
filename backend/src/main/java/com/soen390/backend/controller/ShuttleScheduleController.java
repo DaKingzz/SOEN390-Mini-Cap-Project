@@ -1,5 +1,6 @@
 package com.soen390.backend.controller;
 
+import com.soen390.backend.object.ShuttleScheduleResponse;
 import com.soen390.backend.service.ShuttleScheduleService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +19,7 @@ public class ShuttleScheduleController {
     }
 
     @GetMapping("/schedule")
-    public Map<String, Object> getSchedule() {
+    public ShuttleScheduleResponse getSchedule() {
         return shuttleScheduleService.getScheduleResponse();
     }
 

@@ -4,8 +4,9 @@ import com.soen390.backend.object.ShuttleSchedule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.soen390.backend.object.ShuttleScheduleResponse;
+
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -78,8 +79,8 @@ class ShuttleScheduleServiceTest {
 
     @Test
     void getScheduleResponse_containsSchedulesAndVersion() {
-        Map<String, Object> response = service.getScheduleResponse();
-        assertTrue(response.containsKey("schedules"));
-        assertTrue(response.containsKey("version"));
+        ShuttleScheduleResponse response = service.getScheduleResponse();
+        assertNotNull(response.getSchedules());
+        assertTrue(response.getVersion() > 0);
     }
 }

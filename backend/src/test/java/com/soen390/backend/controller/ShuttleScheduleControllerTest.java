@@ -1,6 +1,7 @@
 package com.soen390.backend.controller;
 
 import com.soen390.backend.object.ShuttleSchedule;
+import com.soen390.backend.object.ShuttleScheduleResponse;
 import com.soen390.backend.service.ShuttleScheduleService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,7 +31,7 @@ class ShuttleScheduleControllerTest {
                 new ShuttleSchedule("SGW", "weekday", List.of("09:15", "09:45"))
         );
         when(shuttleScheduleService.getScheduleResponse())
-                .thenReturn(Map.of("schedules", schedules, "version", 1L));
+                .thenReturn(new ShuttleScheduleResponse(schedules, 1L));
 
         mockMvc.perform(get("/api/shuttle/schedule"))
                 .andExpect(status().isOk())
