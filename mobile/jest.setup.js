@@ -1,5 +1,12 @@
+require("dotenv").config();
+
+const mockApiBaseUrl =
+  process.env.TARGET === "phone"
+    ? process.env.API_BASE_URL_PHONE
+    : process.env.API_BASE_URL_EMULATOR;
+
 jest.mock("expo-constants", () => ({
-  expoConfig: { extra: { API_BASE_URL: "http://localhost:8080" } },
+  expoConfig: { extra: { API_BASE_URL: mockApiBaseUrl } },
 }));
 
 jest.mock("@expo/vector-icons", () => {
