@@ -6,12 +6,22 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-expo/android",
+    "setupFiles": [
+      "./jest.setup.js"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|@react-native-async-storage/async-storage)"
+    ]
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-google-signin/google-signin": "^16.1.1",
-    "@expo/vector-icons": "^15.0.3",
     "dotenv": "^17.2.3",
     "expo": "^54.0.33",
     "expo-constants": "~18.0.13",
@@ -25,8 +35,15 @@
     "react-native-maps": "^1.20.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/parser": "^7.29.0",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
+    "babel-preset-expo": "^54.0.10",
     "expo-doctor": "^1.17.14",
+    "jest": "^29.7.0",
+    "jest-expo": "^54.0.17",
     "typescript": "~5.9.2"
   },
   "private": true

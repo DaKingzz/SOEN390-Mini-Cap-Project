@@ -24,24 +24,21 @@ type Tab = "settings" | "map" | "shuttle";
 const SGW_CENTER = { latitude: 45.4973, longitude: -73.5790 };
 const LOYOLA_CENTER = { latitude: 45.4582, longitude: -73.6405 };
 const CAMPUS_REGION_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
+
 const SHUTTLE_STOPS = {
   SGW: { latitude: 45.497122, longitude: -73.578471 },
   LOYOLA: { latitude: 45.45844144049705, longitude: -73.63831707854963 },
 } as const;
 
-
 const BURGUNDY = "#800020";
-
 // When user zooms out more than this, we leave outline mode (back to regular map view)
 const OUTLINE_EXIT_LAT_DELTA = 0.006;
-
 // Zoom level when entering outline mode (when you click on a marker)
 const OUTLINE_ENTER_REGION: Pick<Region, "latitudeDelta" | "longitudeDelta"> = {
   latitudeDelta: 0.0028,
   longitudeDelta: 0.0028,
 };
 
-// When Mmap ready then freeze markers
 const FREEZE_AFTER_MAP_READY_MS = 1500;
 
 export default function HomeUi() {
@@ -58,53 +55,23 @@ export default function HomeUi() {
     ...CAMPUS_REGION_DELTA,
   });
 
+  // Shuttle logic: selected stop to show on the map + auto-center
   const [shuttleStop, setShuttleStop] = useState<{
-  campus: "SGW" | "LOYOLA";
-  coordinate: { latitude: number; longitude: number };
-} | null>(null);
-
+    campus: "SGW" | "LOYOLA";
+    coordinate: { latitude: number; longitude: number };
+  } | null>(null);
 
   const [selectedBuildingId, setSelectedBuildingId] = useState<BuildingId | null>(null);
   const [outlineMode, setOutlineMode] = useState(false);
   const [showBuildingPopup, setShowBuildingPopup] = useState(false);
 
-  // Markers Pptimization Control
+  // Marker optimization control (stable version)
   const [mapReady, setMapReady] = useState(false);
   const [freezeMarkers, setFreezeMarkers] = useState(false);
   const freezeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapRef = useRef<MapView>(null);
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
-
-  useEffect(() => {
-    // When entering the map screen, let markers render, then freeze them
-    // Reset freeze when switching back to map to avoid invisible markers
-    if (activeTab === "map" && !showEnableLocation) {
-      setFreezeMarkers(false);
-      const t = setTimeout(() => setFreezeMarkers(true), FREEZE_MARKERS_AFTER_MS);
-
-      if (shuttleStop) {
-      requestAnimationFrame(() => {
-        mapRef.current?.animateToRegion(
-          {
-            latitude: shuttleStop.coordinate.latitude,
-            longitude: shuttleStop.coordinate.longitude,
-            ...CAMPUS_REGION_DELTA,
-          },
-          650
-        );
-      });
-    }
-      return () => clearTimeout(t);
-    }
-  }, [activeTab, showEnableLocation, shuttleStop]);
-
-  useEffect(() => {
-    if (activeTab !== "map") {
-      setShuttleStop(null);
-    }
-  }, [activeTab]);
-
 
   const stopWatchingLocation = () => {
     locationSubRef.current?.remove();
@@ -141,13 +108,12 @@ export default function HomeUi() {
 
   // Marker Freeze
   const scheduleFreezeMarkers = () => {
-    // Clear any previous timer
     if (freezeTimerRef.current) clearTimeout(freezeTimerRef.current);
 
     // Unfreeze first so markers can render
     setFreezeMarkers(false);
 
-    // Only freeze if map is ready and map page is actually visible
+    // Only freeze if map is ready and map page is visible
     if (!mapReady || activeTab !== "map" || showEnableLocation) return;
 
     freezeTimerRef.current = setTimeout(() => {
@@ -156,14 +122,40 @@ export default function HomeUi() {
   };
 
   useEffect(() => {
-    // Every time map becomes visible/ready, reschedule freezing safely
-    // Meaning freezing properly so markers dont just disappear
     scheduleFreezeMarkers();
     return () => {
       if (freezeTimerRef.current) clearTimeout(freezeTimerRef.current);
       freezeTimerRef.current = null;
     };
   }, [mapReady, activeTab, showEnableLocation]);
+
+  // Shuttle stop
+  // When shuttleStop is set and map is visible/ready, center on it.
+  useEffect(() => {
+    if (!shuttleStop) return;
+    if (activeTab !== "map") return;
+    if (showEnableLocation) return;
+    if (!mapReady) return;
+
+    // Let overlays/markers render before camera jump
+    requestAnimationFrame(() => {
+      animateToRegion({
+        latitude: shuttleStop.coordinate.latitude,
+        longitude: shuttleStop.coordinate.longitude,
+        ...CAMPUS_REGION_DELTA,
+      });
+    });
+
+    // Unfreeze briefly during camera movement (safer)
+    scheduleFreezeMarkers();
+  }, [shuttleStop, activeTab, showEnableLocation, mapReady]);
+
+  // If you leave the map tab, clear shuttle stop (so it doesn’t “stick” forever)
+  useEffect(() => {
+    if (activeTab !== "map") {
+      setShuttleStop(null);
+    }
+  }, [activeTab]);
 
   const onEnableLocation = async () => {
     try {
@@ -216,17 +208,23 @@ export default function HomeUi() {
       ...CAMPUS_REGION_DELTA,
     });
 
+    // Clear building focus + popup
     setSelectedBuildingId(null);
     setOutlineMode(false);
     setShowBuildingPopup(false);
+
+    // Also clear shuttle stop if user manually changes campus
+    setShuttleStop(null);
   };
 
   const selectedBuilding: Building | null =
     selectedBuildingId ? BUILDINGS.find((b) => b.id === selectedBuildingId) ?? null : null;
 
   const enterOutlineForBuilding = (b: Building) => {
-    // Unfreeze briefly when going into outline mode
     scheduleFreezeMarkers();
+
+    // If user is focusing on a building, clear shuttle stop
+    setShuttleStop(null);
 
     setSelectedBuildingId(b.id);
     setOutlineMode(true);
@@ -238,15 +236,6 @@ export default function HomeUi() {
       ...OUTLINE_ENTER_REGION,
     });
   };
-
-
-  const goToShuttleStop = (c: "SGW" | "LOYOLA") => {
-  const coord = SHUTTLE_STOPS[c];
-
-  setCampus(c);
-  setShuttleStop({ campus: c, coordinate: coord });
-  setActiveTab("map");
-};
 
   const onPressBuilding = (b: Building) => {
     if (selectedBuildingId !== b.id || !outlineMode) {
@@ -264,6 +253,22 @@ export default function HomeUi() {
       setShowBuildingPopup(false);
       setSelectedBuildingId(null);
     }
+  };
+
+  // Called by ShuttleScreen "Directions" button
+  const goToShuttleStop = (c: "SGW" | "LOYOLA") => {
+    const coord = SHUTTLE_STOPS[c];
+
+    setCampus(c);
+    setShuttleStop({ campus: c, coordinate: coord });
+
+    // Switch to map tab so user sees it
+    setActiveTab("map");
+
+    // Exit building focus if any
+    setSelectedBuildingId(null);
+    setOutlineMode(false);
+    setShowBuildingPopup(false);
   };
 
   const renderMapPage = () => {
@@ -287,7 +292,7 @@ export default function HomeUi() {
             scheduleFreezeMarkers();
           }}
         >
-
+          {/* Shuttle stop marker (only when set) */}
           {shuttleStop && (
             <Marker
               coordinate={shuttleStop.coordinate}
@@ -296,6 +301,7 @@ export default function HomeUi() {
             />
           )}
 
+          {/* Buildings */}
           {BUILDINGS.map((b) => (
             <Marker
               key={b.id}
@@ -310,6 +316,7 @@ export default function HomeUi() {
             </Marker>
           ))}
 
+          {/* Outline */}
           {outlineMode && selectedBuilding && (
             <Polygon
               coordinates={selectedBuilding.polygon}
@@ -320,6 +327,7 @@ export default function HomeUi() {
           )}
         </MapView>
 
+        {/* Popup */}
         {showBuildingPopup && selectedBuilding && (
           <BuildingPopup
             id={selectedBuilding.id}
