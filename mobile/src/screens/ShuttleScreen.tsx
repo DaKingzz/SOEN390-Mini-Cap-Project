@@ -154,7 +154,7 @@ function DepartureCard({
   countdownMin: number;
 }) {
   return (
-    <Pressable style={styles.card} onPress={() => {}}>
+    <Pressable style={styles.card} onPress={() => { /* TODO: open route/directions */ }}>
       <View style={styles.cardLeft}>
         <Text style={styles.cardTime}>{time}</Text>
         <Text style={styles.cardFrom}>from {from}</Text>
