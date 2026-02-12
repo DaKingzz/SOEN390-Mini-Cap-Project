@@ -8,9 +8,6 @@
     "icon": "./assets/adaptive-icon2.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "plugins": [
-      "@react-native-google-signin/google-signin"
-    ],
     "splash": {
       "image": "./assets/adaptive-icon2.png",
       "resizeMode": "contain",
